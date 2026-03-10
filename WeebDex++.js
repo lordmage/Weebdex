@@ -33,6 +33,7 @@
     let settingsOpen = false;
     let autoMarkRead = true;
     let hideObserverRunning = false;
+    const queuedIDs = new Set();
 
     const USER_LIST = [];
     const GROUP_LIST = [];
@@ -300,6 +301,7 @@ function hideAllReadFunc() {
     }
 
     function checkPage(entryID) {
+        queuedIDs.delete(entryID);
         GM_xmlhttpRequest({
             method: 'GET',
             url: `https://api.weebdex.org/manga/${entryID}`,
@@ -371,7 +373,7 @@ function hideAllReadFunc() {
                 if(flag==="1"){readBtn.style.backgroundColor=READ_BUTTON_COLOR; ignoreBtn.style.backgroundColor="transparent"; toggleVisibility(entry,!hideRead);}
                 else if(flag==="-1"){readBtn.style.backgroundColor="transparent"; ignoreBtn.style.backgroundColor=IGNORE_BUTTON_COLOR; toggleVisibility(entry,!hideIgnore);}
                 else{readBtn.style.backgroundColor="transparent"; ignoreBtn.style.backgroundColor="transparent"; toggleVisibility(entry,!hideUnmarked);
-                    if(isLatestPage&&(flag===null||forceRecheckNewEntry)&&!queue.includes(entryID)) queue.push(entryID);}
+                    if(isLatestPage&&(flag===null||forceRecheckNewEntry)&&!queuedIDs.has(entryID)) {queue.push(entryID); queuedIDs.add(entryID);}}
             }
         });
     }
