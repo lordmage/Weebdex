@@ -211,7 +211,7 @@ function createControlButton(text,bgColor,onClick){
         const stats = { read: 0, ignored: 0, unmarked: 0 };
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
-            if (key && key.match(/^\d+$/)) {
+            if (key && key.length > 10 && !key.startsWith("_conf_")) {
                 const value = localStorage.getItem(key);
                 if (value === "1") stats.read++;
                 else if (value === "-1") stats.ignored++;
