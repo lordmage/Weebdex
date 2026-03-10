@@ -428,7 +428,6 @@ function hideAllReadFunc() {
             users: USER_LIST,
             groups: GROUP_LIST,
             tags: TAG_LIST,
-            darkMode,
             autoMarkRead,
             hideRead,
             hideIgnore,
@@ -515,7 +514,6 @@ function hideAllReadFunc() {
     //------------------INIT----------------//
     function init(){
         addStyles();
-        loadDarkMode();
         startHideObserver();
         autoMarkReadOnChapter();
         setTimeout(handleQueue,API_REQUEST_INTERVAL);
