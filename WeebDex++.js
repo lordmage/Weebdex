@@ -200,8 +200,9 @@ function createControlButton(text,bgColor,onClick){
         if (pathParts.length >= 3) {
             const chapterPart = pathParts[2]; // e.g., "mangaId-chapterId"
             const mangaId = chapterPart.split('-')[0];
-            if (chapterPart) {
-                localStorage.setItem(chapterPart, "1");
+            const chapterId = chapterPart.split('-')[1];
+            if (chapterId) {
+                localStorage.setItem(chapterId, "1");
             }
             if (mangaId) {
                 localStorage.setItem(mangaId, "1");
