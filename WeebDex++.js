@@ -111,9 +111,9 @@ function addControllers() {
     const controlsContainer = document.createElement("div");
     controlsContainer.style.cssText = "display:flex;flex-direction:column;gap:6px;";
 
-    const button1 = createControlButton("Toggle Read", hideRead ? READ_BUTTON_COLOR : "transparent", () => { hideRead = !hideRead; button1.style.backgroundColor = hideRead ? READ_BUTTON_COLOR : "transparent"; categorize(getFormat(window.location.pathname), window.location.pathname === CATEGORY_UPDATES); });
-    const button2 = createControlButton("Toggle Ignore", hideIgnore ? IGNORE_BUTTON_COLOR : "transparent", () => { hideIgnore = !hideIgnore; button2.style.backgroundColor = hideIgnore ? IGNORE_BUTTON_COLOR : "transparent"; categorize(getFormat(window.location.pathname), window.location.pathname === CATEGORY_UPDATES); });
-    const button3 = createControlButton("Toggle Unmarked", hideUnmarked ? UNMARKED_BUTTON_COLOR : "transparent", () => { hideUnmarked = !hideUnmarked; button3.style.backgroundColor = hideUnmarked ? UNMARKED_BUTTON_COLOR : "transparent"; categorize(getFormat(window.location.pathname), window.location.pathname === CATEGORY_UPDATES); });
+    const button1 = createControlButton("Toggle Read", hideRead ? READ_BUTTON_COLOR : "transparent", () => { hideRead = !hideRead; button1.style.backgroundColor = hideRead ? READ_BUTTON_COLOR : "transparent"; categorize(getFormat(window.location.pathname), window.location.pathname === CATEGORY_UPDATES); hideAllReadFunc(); });
+    const button2 = createControlButton("Toggle Ignore", hideIgnore ? IGNORE_BUTTON_COLOR : "transparent", () => { hideIgnore = !hideIgnore; button2.style.backgroundColor = hideIgnore ? IGNORE_BUTTON_COLOR : "transparent"; categorize(getFormat(window.location.pathname), window.location.pathname === CATEGORY_UPDATES); hideAllReadFunc(); });
+    const button3 = createControlButton("Toggle Unmarked", hideUnmarked ? UNMARKED_BUTTON_COLOR : "transparent", () => { hideUnmarked = !hideUnmarked; button3.style.backgroundColor = hideUnmarked ? UNMARKED_BUTTON_COLOR : "transparent"; categorize(getFormat(window.location.pathname), window.location.pathname === CATEGORY_UPDATES); hideAllReadFunc(); });
     const button4 = createControlButton("Hide All Read?", hideAllRead ? HIDE_ALL_READ_BUTTON_COLOR : "transparent", () => { hideAllRead = !hideAllRead; button4.style.backgroundColor = hideAllRead ? HIDE_ALL_READ_BUTTON_COLOR : "transparent"; hideAllReadFunc(); });
     const darkModeBtn = createControlButton("🌙 Dark Mode", darkMode ? "#4a5568" : "transparent", toggleDarkMode);
 
@@ -186,14 +186,32 @@ function createControlButton(text,bgColor,onClick){
                     if (e.ctrlKey || e.metaKey) return; // Allow Ctrl+R for refresh
                     hideRead = !hideRead;
                     categorize(getFormat(window.location.pathname), window.location.pathname === CATEGORY_UPDATES);
+                    hideAllReadFunc();
+                    // Update button color
+                    const readBtn = document.querySelector('#weebdex-controls .control-btn');
+                    if (readBtn && readBtn.textContent.includes('Read')) {
+                        readBtn.style.backgroundColor = hideRead ? READ_BUTTON_COLOR : "transparent";
+                    }
                     break;
                 case 'i':
                     hideIgnore = !hideIgnore;
                     categorize(getFormat(window.location.pathname), window.location.pathname === CATEGORY_UPDATES);
+                    hideAllReadFunc();
+                    // Update button color
+                    const ignoreBtn = document.querySelectorAll('#weebdex-controls .control-btn')[1];
+                    if (ignoreBtn && ignoreBtn.textContent.includes('Ignore')) {
+                        ignoreBtn.style.backgroundColor = hideIgnore ? IGNORE_BUTTON_COLOR : "transparent";
+                    }
                     break;
                 case 'u':
                     hideUnmarked = !hideUnmarked;
                     categorize(getFormat(window.location.pathname), window.location.pathname === CATEGORY_UPDATES);
+                    hideAllReadFunc();
+                    // Update button color
+                    const unmarkedBtn = document.querySelectorAll('#weebdex-controls .control-btn')[2];
+                    if (unmarkedBtn && unmarkedBtn.textContent.includes('Unmarked')) {
+                        unmarkedBtn.style.backgroundColor = hideUnmarked ? UNMARKED_BUTTON_COLOR : "transparent";
+                    }
                     break;
                 case 'd':
                     toggleDarkMode();
