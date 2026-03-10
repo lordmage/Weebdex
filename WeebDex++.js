@@ -107,8 +107,6 @@
 
     function hideEntries() {
         document.body.classList.add('weebdex-hiding');
-        // remove class after a short delay in case categorize isn't called immediately
-        setTimeout(() => document.body.classList.remove('weebdex-hiding'), 50);
     }
 function addControllers() {
     let ele = document.querySelector("#weebdex-controls");
@@ -149,10 +147,10 @@ function addControllers() {
     const controlsContainer = document.createElement("div");
     controlsContainer.style.cssText = "display:flex;flex-direction:column;gap:6px;";
 
-    const button1 = createControlButton(hideRead ? "Read Hidden" : "Read Shown", hideRead ? READ_BUTTON_COLOR : "transparent", () => { hideEntries(); hideRead = !hideRead; button1.style.backgroundColor = hideRead ? READ_BUTTON_COLOR : "transparent"; button1.textContent = hideRead ? "Read Hidden" : "Read Shown"; categorize(getFormat(window.location.href), window.location.href === CATEGORY_UPDATES); hideAllReadFunc(); });
-    const button2 = createControlButton(hideIgnore ? "Ignore Hidden" : "Ignore Shown", hideIgnore ? IGNORE_BUTTON_COLOR : "transparent", () => { hideEntries(); hideIgnore = !hideIgnore; button2.style.backgroundColor = hideIgnore ? IGNORE_BUTTON_COLOR : "transparent"; button2.textContent = hideIgnore ? "Ignore Hidden" : "Ignore Shown"; categorize(getFormat(window.location.href), window.location.href === CATEGORY_UPDATES); hideAllReadFunc(); });
-    const button3 = createControlButton(hideUnmarked ? "Unmarked Hidden" : "Unmarked Shown", hideUnmarked ? UNMARKED_BUTTON_COLOR : "transparent", () => { hideEntries(); hideUnmarked = !hideUnmarked; button3.style.backgroundColor = hideUnmarked ? UNMARKED_BUTTON_COLOR : "transparent"; button3.textContent = hideUnmarked ? "Unmarked Hidden" : "Unmarked Shown"; categorize(getFormat(window.location.href), window.location.href === CATEGORY_UPDATES); hideAllReadFunc(); });
-    const button4 = createControlButton(hideAllRead ? "All Read Hidden" : "All Read Shown", hideAllRead ? HIDE_ALL_READ_BUTTON_COLOR : "transparent", () => { hideEntries(); hideAllRead = !hideAllRead; button4.style.backgroundColor = hideAllRead ? HIDE_ALL_READ_BUTTON_COLOR : "transparent"; button4.textContent = hideAllRead ? "All Read Hidden" : "All Read Shown"; hideAllReadFunc(); });
+    const button1 = createControlButton(hideRead ? "Read Hidden" : "Read Shown", hideRead ? READ_BUTTON_COLOR : "transparent", () => { hideEntries(); hideRead = !hideRead; button1.style.backgroundColor = hideRead ? READ_BUTTON_COLOR : "transparent"; button1.textContent = hideRead ? "Read Hidden" : "Read Shown"; categorize(getFormat(window.location.href), window.location.href === CATEGORY_UPDATES); hideAllReadFunc(); document.body.classList.remove('weebdex-hiding'); });
+    const button2 = createControlButton(hideIgnore ? "Ignore Hidden" : "Ignore Shown", hideIgnore ? IGNORE_BUTTON_COLOR : "transparent", () => { hideEntries(); hideIgnore = !hideIgnore; button2.style.backgroundColor = hideIgnore ? IGNORE_BUTTON_COLOR : "transparent"; button2.textContent = hideIgnore ? "Ignore Hidden" : "Ignore Shown"; categorize(getFormat(window.location.href), window.location.href === CATEGORY_UPDATES); hideAllReadFunc(); document.body.classList.remove('weebdex-hiding'); });
+    const button3 = createControlButton(hideUnmarked ? "Unmarked Hidden" : "Unmarked Shown", hideUnmarked ? UNMARKED_BUTTON_COLOR : "transparent", () => { hideEntries(); hideUnmarked = !hideUnmarked; button3.style.backgroundColor = hideUnmarked ? UNMARKED_BUTTON_COLOR : "transparent"; button3.textContent = hideUnmarked ? "Unmarked Hidden" : "Unmarked Shown"; categorize(getFormat(window.location.href), window.location.href === CATEGORY_UPDATES); hideAllReadFunc(); document.body.classList.remove('weebdex-hiding'); });
+    const button4 = createControlButton(hideAllRead ? "All Read Hidden" : "All Read Shown", hideAllRead ? HIDE_ALL_READ_BUTTON_COLOR : "transparent", () => { hideEntries(); hideAllRead = !hideAllRead; button4.style.backgroundColor = hideAllRead ? HIDE_ALL_READ_BUTTON_COLOR : "transparent"; button4.textContent = hideAllRead ? "All Read Hidden" : "All Read Shown"; hideAllReadFunc(); document.body.classList.remove('weebdex-hiding'); });
 
     controlsContainer.appendChild(button1);
     controlsContainer.appendChild(button2);
@@ -185,7 +183,7 @@ function createControlButton(text,bgColor,onClick){
             body.weebdex-hiding [class*="manga-card"],
             body.weebdex-hiding .manga-card,
             body.weebdex-hiding .title-card {
-                visibility: hidden !important;
+                display: none !important;
             }
         `;
         document.head.appendChild(style);
