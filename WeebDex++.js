@@ -90,6 +90,12 @@
         if (currentlyVisible === on) return;
         element.style.display = on ? "" : "none";
     }
+
+    function hideEntries() {
+        document.body.classList.add('weebdex-hiding');
+        // remove class after a short delay in case categorize isn't called immediately
+        setTimeout(() => document.body.classList.remove('weebdex-hiding'), 50);
+    }
 function addControllers() {
     let ele = document.querySelector("#weebdex-controls");
     if (!ele) {
@@ -129,10 +135,10 @@ function addControllers() {
     const controlsContainer = document.createElement("div");
     controlsContainer.style.cssText = "display:flex;flex-direction:column;gap:6px;";
 
-    const button1 = createControlButton(hideRead ? "Read Hidden" : "Read Shown", hideRead ? READ_BUTTON_COLOR : "transparent", () => { hideRead = !hideRead; button1.style.backgroundColor = hideRead ? READ_BUTTON_COLOR : "transparent"; button1.textContent = hideRead ? "Read Hidden" : "Read Shown"; categorize(getFormat(window.location.href), window.location.href === CATEGORY_UPDATES); hideAllReadFunc(); });
-    const button2 = createControlButton(hideIgnore ? "Ignore Hidden" : "Ignore Shown", hideIgnore ? IGNORE_BUTTON_COLOR : "transparent", () => { hideIgnore = !hideIgnore; button2.style.backgroundColor = hideIgnore ? IGNORE_BUTTON_COLOR : "transparent"; button2.textContent = hideIgnore ? "Ignore Hidden" : "Ignore Shown"; categorize(getFormat(window.location.href), window.location.href === CATEGORY_UPDATES); hideAllReadFunc(); });
-    const button3 = createControlButton(hideUnmarked ? "Unmarked Hidden" : "Unmarked Shown", hideUnmarked ? UNMARKED_BUTTON_COLOR : "transparent", () => { hideUnmarked = !hideUnmarked; button3.style.backgroundColor = hideUnmarked ? UNMARKED_BUTTON_COLOR : "transparent"; button3.textContent = hideUnmarked ? "Unmarked Hidden" : "Unmarked Shown"; categorize(getFormat(window.location.href), window.location.href === CATEGORY_UPDATES); hideAllReadFunc(); });
-    const button4 = createControlButton(hideAllRead ? "All Read Hidden" : "All Read Shown", hideAllRead ? HIDE_ALL_READ_BUTTON_COLOR : "transparent", () => { hideAllRead = !hideAllRead; button4.style.backgroundColor = hideAllRead ? HIDE_ALL_READ_BUTTON_COLOR : "transparent"; button4.textContent = hideAllRead ? "All Read Hidden" : "All Read Shown"; hideAllReadFunc(); });
+    const button1 = createControlButton(hideRead ? "Read Hidden" : "Read Shown", hideRead ? READ_BUTTON_COLOR : "transparent", () => { hideEntries(); hideRead = !hideRead; button1.style.backgroundColor = hideRead ? READ_BUTTON_COLOR : "transparent"; button1.textContent = hideRead ? "Read Hidden" : "Read Shown"; categorize(getFormat(window.location.href), window.location.href === CATEGORY_UPDATES); hideAllReadFunc(); });
+    const button2 = createControlButton(hideIgnore ? "Ignore Hidden" : "Ignore Shown", hideIgnore ? IGNORE_BUTTON_COLOR : "transparent", () => { hideEntries(); hideIgnore = !hideIgnore; button2.style.backgroundColor = hideIgnore ? IGNORE_BUTTON_COLOR : "transparent"; button2.textContent = hideIgnore ? "Ignore Hidden" : "Ignore Shown"; categorize(getFormat(window.location.href), window.location.href === CATEGORY_UPDATES); hideAllReadFunc(); });
+    const button3 = createControlButton(hideUnmarked ? "Unmarked Hidden" : "Unmarked Shown", hideUnmarked ? UNMARKED_BUTTON_COLOR : "transparent", () => { hideEntries(); hideUnmarked = !hideUnmarked; button3.style.backgroundColor = hideUnmarked ? UNMARKED_BUTTON_COLOR : "transparent"; button3.textContent = hideUnmarked ? "Unmarked Hidden" : "Unmarked Shown"; categorize(getFormat(window.location.href), window.location.href === CATEGORY_UPDATES); hideAllReadFunc(); });
+    const button4 = createControlButton(hideAllRead ? "All Read Hidden" : "All Read Shown", hideAllRead ? HIDE_ALL_READ_BUTTON_COLOR : "transparent", () => { hideEntries(); hideAllRead = !hideAllRead; button4.style.backgroundColor = hideAllRead ? HIDE_ALL_READ_BUTTON_COLOR : "transparent"; button4.textContent = hideAllRead ? "All Read Hidden" : "All Read Shown"; hideAllReadFunc(); });
 
     controlsContainer.appendChild(button1);
     controlsContainer.appendChild(button2);
@@ -160,6 +166,13 @@ function createControlButton(text,bgColor,onClick){
             .control-btn:hover {opacity:0.9; transform:translateY(-1px); box-shadow:0 2px 4px rgba(0,0,0,0.1);}
             .weebdex-tracker-btns {animation: fadeIn 0.3s ease;}
             @keyframes fadeIn {from {opacity:0; transform:translateY(-5px);} to {opacity:1; transform:translateY(0);}}
+            /* hide entries while we’re recalculating visibility to prevent flicker */
+            body.weebdex-hiding article.flex.gap-2.border-t-2.py-2,
+            body.weebdex-hiding [class*="manga-card"],
+            body.weebdex-hiding .manga-card,
+            body.weebdex-hiding .title-card {
+                visibility: hidden !important;
+            }
         `;
         document.head.appendChild(style);
     }
@@ -248,10 +261,14 @@ function hideAllReadFunc() {
 
             hideObserverRunning = true;
 
+            // hide everything immediately until we recalc
+            document.body.classList.add('weebdex-hiding');
+
             requestAnimationFrame(() => {
                 // re-run categorize on mutations to immediately apply hide settings
                 categorize(getFormat(window.location.href), window.location.href===CATEGORY_UPDATES);
                 if (hideAllRead) hideAllReadFunc();
+                document.body.classList.remove('weebdex-hiding');
                 hideObserverRunning = false;
             });
 
