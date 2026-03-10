@@ -261,7 +261,7 @@ function hideAllReadFunc() {
 
     function parseAndHandleEntry(entryID, metadata) {
         if (!metadata) return;
-        const tags = metadata.tags || [];
+        const tags = metadata.relationships?.tags || [];
         for (let i=0;i<tags.length;i++) {
             const tag = tags[i].name ? tags[i].name.toLowerCase() : "";
             if (TAG_LIST.includes(tag)) {
