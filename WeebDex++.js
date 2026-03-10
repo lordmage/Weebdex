@@ -34,6 +34,7 @@
     let darkMode = false;
     let autoMarkRead = true;
     let keyboardShortcuts = true;
+    let hideObserverRunning = false;
 
     const USER_LIST = [];
     const GROUP_LIST = [];
@@ -297,9 +298,26 @@ function hideAllReadFunc() {
     });
 }
      //------------------hide observer----------------//
-    function startHideObserver() {
-        const observer = new MutationObserver(() => { if (hideAllRead) hideAllReadFunc(); });
-        observer.observe(document.body, { childList: true, subtree: true });
+    function startHideObserver(){
+
+        const observer = new MutationObserver(() => {
+
+            if (hideObserverRunning) return;
+
+            hideObserverRunning = true;
+
+            requestAnimationFrame(() => {
+                if (hideAllRead) hideAllReadFunc();
+                hideObserverRunning = false;
+            });
+
+        });
+
+        observer.observe(document.body,{
+            childList: true,
+            subtree: true
+        });
+
     }
 
     //------------------QUEUE----------------//
