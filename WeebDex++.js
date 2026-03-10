@@ -58,6 +58,44 @@
 
     let allTags = [];
 
+    // IndexedDB cache for manga metadata (single fetch per manga)
+    let dbPromise = null;
+    function initCache() {
+        if (dbPromise) return dbPromise;
+        dbPromise = new Promise((resolve, reject) => {
+            const req = indexedDB.open('WeebDexPlusCache', 1);
+            req.onupgradeneeded = e => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains('manga')) {
+                    db.createObjectStore('manga', { keyPath: 'id' });
+                }
+            };
+            req.onsuccess = e => resolve(e.target.result);
+            req.onerror = e => reject(e.target.error);
+        });
+        return dbPromise;
+    }
+
+    function getMangaFromCache(id) {
+        return initCache().then(db => new Promise((res, rej) => {
+            const tx = db.transaction('manga', 'readonly');
+            const store = tx.objectStore('manga');
+            const r = store.get(id);
+            r.onsuccess = () => res(r.result ? r.result.data : null);
+            r.onerror = () => rej(r.error);
+        }));
+    }
+
+    function saveMangaToCache(id, data) {
+        return initCache().then(db => new Promise((res, rej) => {
+            const tx = db.transaction('manga', 'readwrite');
+            const store = tx.objectStore('manga');
+            const r = store.put({ id, data });
+            r.onsuccess = () => res();
+            r.onerror = () => rej(r.error);
+        }));
+    }
+
     // Config storage functions
     function getConfig(key, defaultValue) {
         return GM_getValue(key, defaultValue);
@@ -308,6 +346,29 @@ function hideAllReadFunc() {
 
     function checkPage(entryID) {
         queuedIDs.delete(entryID);
+        // if a force recheck was requested, bypass cache once
+        const bypassCache = forceRecheckNewEntry;
+        if (bypassCache) {
+            forceRecheckNewEntry = false;
+        }
+        const handleData = data => {
+            parseAndHandleEntry(entryID, data);
+        };
+        if (!bypassCache) {
+            getMangaFromCache(entryID).then(cached => {
+                if (cached) {
+                    handleData(cached);
+                    return;
+                }
+                // fall through to network fetch
+                queue.push(entryID); // re-enqueue for network
+            }).catch(() => {
+                // if cache read fails, just proceed to network
+                queue.push(entryID);
+            });
+            return;
+        }
+        // network fetch
         GM_xmlhttpRequest({
             method: 'GET',
             url: `https://api.weebdex.org/manga/${entryID}`,
@@ -317,7 +378,9 @@ function hideAllReadFunc() {
             onload: function(res) {
                 if (res.status >= 200 && res.status < 300) {
                     try {
-                        parseAndHandleEntry(entryID, JSON.parse(res.responseText));
+                        const parsed = JSON.parse(res.responseText);
+                        saveMangaToCache(entryID, parsed).catch(() => {});
+                        handleData(parsed);
                     } catch (e) {
                         console.error('Error parsing response for manga ' + entryID, e);
                     }
