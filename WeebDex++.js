@@ -90,8 +90,8 @@
     if (href.startsWith("https://weebdex.org/group")) return 2; // FORMAT_THUMBNAIL
     if (href.startsWith("https://weebdex.org/author")) return 2;
     if (href.startsWith("https://weebdex.org/tag")) return 2;
-    if (href === "https://weebdex.org/updates") return 1; // FORMAT_LIST
-    if (href === "https://weebdex.org/search?sort=createdAt") return 1; // FORMAT_LIST for recent feed
+    if (href.startsWith("https://weebdex.org/updates")) return 1; // FORMAT_LIST
+    if (href.startsWith("https://weebdex.org/search?sort=createdAt")) return 1; // FORMAT_LIST for recent feed
     if (href.startsWith("https://weebdex.org/search")) return 2;
     return 2;
 }
