@@ -51,6 +51,22 @@
     const FORMAT_THUMBNAIL = 2;
     const FORMAT_DETAIL = 3;
 
+    let allTags = [];
+
+    function fetchTags() {
+        return fetch('https://api.weebdex.org/manga/tag?limit=100')
+            .then(res => res.json())
+            .then(data => {
+                allTags = data.data.map(tag => tag.name.toLowerCase()).sort();
+                return allTags;
+            })
+            .catch(err => {
+                console.error('Failed to fetch tags', err);
+                allTags = [];
+                return [];
+            });
+    }
+
     //------------------UTILS----------------//
     function getFormat(href) {
     if (href.startsWith("https://weebdex.org/title/")) return 3; // FORMAT_DETAIL
@@ -148,11 +164,14 @@ function createControlButton(text,bgColor,onClick){
     //------------------AUTO MARK READ----------------//
     function autoMarkReadOnChapter() {
         if (!autoMarkRead || !window.location.href.includes(CATEGORY_CHAPTER)) return;
-        // Extract manga ID from chapter URL, assuming format /chapter/mangaId-chapterId
+        // Extract chapter ID from chapter URL, assuming format /chapter/mangaId-chapterId
         const pathParts = window.location.pathname.split('/');
         if (pathParts.length >= 3) {
             const chapterPart = pathParts[2]; // e.g., "mangaId-chapterId"
             const mangaId = chapterPart.split('-')[0];
+            if (chapterPart) {
+                localStorage.setItem(chapterPart, "1");
+            }
             if (mangaId) {
                 localStorage.setItem(mangaId, "1");
             }
@@ -280,12 +299,14 @@ function hideAllReadFunc() {
         entries.forEach(entry=>{
             let shouldHide=false;
             entry.querySelectorAll('a[href*="/user/"]').forEach(link=>{
-                const title=link.getAttribute('title');
-                if(title && USER_LIST.includes(title.trim())) shouldHide=true;
+                const href = link.getAttribute('href');
+                const id = href ? href.split('/').pop() : null;
+                if(id && USER_LIST.includes(id)) shouldHide=true;
             });
             if(!shouldHide) entry.querySelectorAll('a[href*="/group/"]').forEach(link=>{
-                const title=link.getAttribute('title');
-                if(title && GROUP_LIST.includes(title.trim())) shouldHide=true;
+                const href = link.getAttribute('href');
+                const id = href ? href.split('/').pop() : null;
+                if(id && GROUP_LIST.includes(id)) shouldHide=true;
             });
             if(shouldHide) entry.style.display="none";
         });
@@ -386,21 +407,54 @@ function hideAllReadFunc() {
 
             // User block input
             const userDiv=document.createElement("div");
-            const userLabel=document.createElement("label");userLabel.textContent="Blocked Users (comma-separated):";userLabel.style.cssText="display:block;font-size:12px;color:#6b7280;margin-bottom:4px;";userDiv.appendChild(userLabel);
-            const userInput=document.createElement("textarea");userInput.value=USER_LIST.join(", ");userInput.style.cssText="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:12px;resize:vertical;min-height:60px;";userDiv.appendChild(userInput);
+            const userLabel=document.createElement("label");userLabel.textContent="Blocked Users:";userLabel.style.cssText="display:block;font-size:12px;color:#6b7280;margin-bottom:4px;";userDiv.appendChild(userLabel);
+            const userInput=document.createElement("input");userInput.placeholder="Add user ID to block";userInput.style.cssText="width:calc(100% - 60px);padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:12px;margin-bottom:8px;";
+            const addUserBtn=document.createElement("button");addUserBtn.textContent="Add";addUserBtn.style.cssText="padding:8px;background:#10b981;color:white;border:none;border-radius:4px;cursor:pointer;font-size:12px;margin-left:8px;";
+            addUserBtn.addEventListener("click",()=>{const user=userInput.value.trim();if(user&&!USER_LIST.includes(user)){USER_LIST.push(user);userInput.value="";updateBlockedList(userListDiv,USER_LIST,"user");}});
+            const userInputContainer=document.createElement("div");userInputContainer.style.cssText="display:flex;margin-bottom:8px;";userInputContainer.appendChild(userInput);userInputContainer.appendChild(addUserBtn);userDiv.appendChild(userInputContainer);
+            const userListDiv=document.createElement("div");userListDiv.style.cssText="max-height:100px;overflow-y:auto;border:1px solid #d1d5db;padding:8px;border-radius:4px;font-size:12px;";userDiv.appendChild(userListDiv);
+            updateBlockedList(userListDiv,USER_LIST,"user");
             settingsPanel.appendChild(userDiv);
 
             // Group block input
             const groupDiv=document.createElement("div");
-            const groupLabel=document.createElement("label");groupLabel.textContent="Blocked Groups (comma-separated):";groupLabel.style.cssText="display:block;font-size:12px;color:#6b7280;margin-bottom:4px;";groupDiv.appendChild(groupLabel);
-            const groupInput=document.createElement("textarea");groupInput.value=GROUP_LIST.join(", ");groupInput.style.cssText="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:12px;resize:vertical;min-height:60px;";groupDiv.appendChild(groupInput);
+            const groupLabel=document.createElement("label");groupLabel.textContent="Blocked Groups:";groupLabel.style.cssText="display:block;font-size:12px;color:#6b7280;margin-bottom:4px;";groupDiv.appendChild(groupLabel);
+            const groupInput=document.createElement("input");groupInput.placeholder="Add group ID to block";groupInput.style.cssText="width:calc(100% - 60px);padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:12px;margin-bottom:8px;";
+            const addGroupBtn=document.createElement("button");addGroupBtn.textContent="Add";addGroupBtn.style.cssText="padding:8px;background:#10b981;color:white;border:none;border-radius:4px;cursor:pointer;font-size:12px;margin-left:8px;";
+            addGroupBtn.addEventListener("click",()=>{const group=groupInput.value.trim();if(group&&!GROUP_LIST.includes(group)){GROUP_LIST.push(group);groupInput.value="";updateBlockedList(groupListDiv,GROUP_LIST,"group");}});
+            const groupInputContainer=document.createElement("div");groupInputContainer.style.cssText="display:flex;margin-bottom:8px;";groupInputContainer.appendChild(groupInput);groupInputContainer.appendChild(addGroupBtn);groupDiv.appendChild(groupInputContainer);
+            const groupListDiv=document.createElement("div");groupListDiv.style.cssText="max-height:100px;overflow-y:auto;border:1px solid #d1d5db;padding:8px;border-radius:4px;font-size:12px;";groupDiv.appendChild(groupListDiv);
+            updateBlockedList(groupListDiv,GROUP_LIST,"group");
             settingsPanel.appendChild(groupDiv);
 
             // Tag block input
             const tagDiv=document.createElement("div");
-            const tagLabel=document.createElement("label");tagLabel.textContent="Blocked Tags (comma-separated, lowercase):";tagLabel.style.cssText="display:block;font-size:12px;color:#6b7280;margin-bottom:4px;";tagDiv.appendChild(tagLabel);
-            const tagInput=document.createElement("textarea");tagInput.value=TAG_LIST.join(", ");tagInput.style.cssText="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:12px;resize:vertical;min-height:60px;";tagDiv.appendChild(tagInput);
+            const tagLabel=document.createElement("label");tagLabel.textContent="Blocked Tags:";tagLabel.style.cssText="display:block;font-size:12px;color:#6b7280;margin-bottom:4px;";tagDiv.appendChild(tagLabel);
+            const tagContainer=document.createElement("div");tagContainer.style.cssText="max-height:200px;overflow-y:auto;border:1px solid #d1d5db;padding:8px;border-radius:4px;font-size:12px;";
+            tagContainer.innerHTML = "Loading tags...";
+            tagDiv.appendChild(tagContainer);
             settingsPanel.appendChild(tagDiv);
+
+            // Load tags
+            fetchTags().then(tags => {
+                tagContainer.innerHTML = "";
+                if (tags.length === 0) {
+                    tagContainer.innerHTML = "Failed to load tags.";
+                    return;
+                }
+                tags.forEach(tag => {
+                    const label = document.createElement("label");
+                    label.style.cssText = "display:block;margin-bottom:2px;cursor:pointer;";
+                    const checkbox = document.createElement("input");
+                    checkbox.type = "checkbox";
+                    checkbox.value = tag;
+                    checkbox.checked = TAG_LIST.includes(tag);
+                    checkbox.style.cssText = "margin-right:8px;";
+                    label.appendChild(checkbox);
+                    label.appendChild(document.createTextNode(tag));
+                    tagContainer.appendChild(label);
+                });
+            });
 
             // Statistics
             const stats = getStatistics();
@@ -427,12 +481,38 @@ function hideAllReadFunc() {
             // Save button
             const saveBtn=document.createElement("button");saveBtn.textContent="💾 Save Configuration";
             saveBtn.style.cssText="width:100%;padding:10px;background-color:#8b5cf6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:14px;margin-top:8px;transition:background-color 0.2s;";
-            saveBtn.addEventListener("click",()=>{saveConfiguration(userInput.value,groupInput.value,tagInput.value);});
+            saveBtn.addEventListener("click",()=>{ 
+                const checkedTags = Array.from(tagContainer.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+                saveConfiguration(USER_LIST.join(", "), GROUP_LIST.join(", "), checkedTags);
+            });
             settingsPanel.appendChild(saveBtn);
         }
         settingsOpen=true;
     }
 
+    function addBlockButton(type, id) {
+        const h1 = document.querySelector('h1.truncate.text-2xl.font-semibold');
+        if (!h1 || document.querySelector('.weebdex-block-btn')) return;
+        const button = document.createElement("button");
+        button.className = "weebdex-block-btn";
+        const list = type === 'user' ? USER_LIST : GROUP_LIST;
+        const isBlocked = list.includes(id);
+        button.textContent = isBlocked ? `Unblock ${type}` : `Block ${type}`;
+        button.style.cssText = `margin-left:10px;padding:4px 8px;background:${isBlocked ? '#ef4444' : '#10b981'};color:white;border:none;border-radius:4px;cursor:pointer;font-size:12px;`;
+        button.addEventListener("click", () => {
+            if (isBlocked) {
+                const index = list.indexOf(id);
+                if (index > -1) list.splice(index, 1);
+            } else {
+                list.push(id);
+            }
+            localStorage.setItem(type === 'user' ? "_conf_users" : "_conf_groups", list.toString());
+            const nowBlocked = list.includes(id);
+            button.textContent = nowBlocked ? `Unblock ${type}` : `Block ${type}`;
+            button.style.background = nowBlocked ? '#ef4444' : '#10b981';
+        });
+        h1.insertAdjacentElement('afterend', button);
+    }
     function exportSettings() {
         const settings = {
             users: USER_LIST,
@@ -455,7 +535,35 @@ function hideAllReadFunc() {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
     }
-
+    function updateBlockedList(listDiv, list, type) {
+        listDiv.innerHTML = "";
+        list.forEach(item => {
+            const itemDiv = document.createElement("div");
+            itemDiv.style.cssText = "display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #f0f0f0;";
+            const nameSpan = document.createElement("span");
+            nameSpan.textContent = item;
+            itemDiv.appendChild(nameSpan);
+            const removeBtn = document.createElement("button");
+            removeBtn.textContent = "Remove";
+            removeBtn.style.cssText = "background:#ef4444;color:white;border:none;padding:2px 6px;border-radius:3px;cursor:pointer;font-size:10px;";
+            removeBtn.addEventListener("click", () => {
+                const index = list.indexOf(item);
+                if (index > -1) list.splice(index, 1);
+                updateBlockedList(listDiv, list, type);
+            });
+            itemDiv.appendChild(removeBtn);
+            listDiv.appendChild(itemDiv);
+            // Fetch name
+            fetch(`https://api.weebdex.org/${type}/${item}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.name) {
+                        nameSpan.textContent = `${data.name} (${item})`;
+                    }
+                })
+                .catch(() => {});
+        });
+    }
     function importSettings() {
         const input = document.createElement('input');
         input.type = 'file';
@@ -477,6 +585,8 @@ function hideAllReadFunc() {
                         hideIgnore = settings.hideIgnore !== false;
                         hideUnmarked = settings.hideUnmarked || false;
                         hideAllRead = settings.hideAllRead !== false;
+                        localStorage.setItem("_conf_users", USER_LIST.toString());
+                        localStorage.setItem("_conf_groups", GROUP_LIST.toString());
                         localStorage.setItem("_conf_tags", TAG_LIST.toString());
                         forceRecheckNewEntry = true;
                         categorize(getFormat(window.location.href), window.location.href === CATEGORY_UPDATES);
@@ -494,7 +604,13 @@ function hideAllReadFunc() {
     function saveConfiguration(users,groups,tags){
         USER_LIST.length=0; USER_LIST.push(...users.split(",").map(u=>u.trim()).filter(u=>u));
         GROUP_LIST.length=0; GROUP_LIST.push(...groups.split(",").map(g=>g.trim()).filter(g=>g));
-        TAG_LIST.length=0; TAG_LIST.push(...tags.split(",").map(t=>t.trim().toLowerCase()).filter(t=>t));
+        if (Array.isArray(tags)) {
+            TAG_LIST.length=0; TAG_LIST.push(...tags);
+        } else {
+            TAG_LIST.length=0; TAG_LIST.push(...tags.split(",").map(t=>t.trim().toLowerCase()).filter(t=>t));
+        }
+        localStorage.setItem("_conf_users",USER_LIST.toString());
+        localStorage.setItem("_conf_groups",GROUP_LIST.toString());
         localStorage.setItem("_conf_tags",TAG_LIST.toString());
         forceRecheckNewEntry=true;
         settingsOpen=false;
@@ -521,6 +637,16 @@ function hideAllReadFunc() {
             initialized=true;
         }
         addButtons(format);
+        if (format === FORMAT_DETAIL) {
+            const pathname = url.pathname;
+            if (pathname.startsWith('/group/')) {
+                const id = pathname.split('/')[2];
+                if (id) addBlockButton('group', id);
+            } else if (pathname.startsWith('/user/')) {
+                const id = pathname.split('/')[2];
+                if (id) addBlockButton('user', id);
+            }
+        }
         categorize(format,url.href===CATEGORY_UPDATES);
     }
 
@@ -529,6 +655,11 @@ function hideAllReadFunc() {
         addStyles();
         startHideObserver();
         autoMarkReadOnChapter();
+        // Load saved lists
+        const savedUsers = localStorage.getItem("_conf_users");
+        if (savedUsers) USER_LIST.push(...savedUsers.split(",").filter(u=>u));
+        const savedGroups = localStorage.getItem("_conf_groups");
+        if (savedGroups) GROUP_LIST.push(...savedGroups.split(",").filter(g=>g));
         setTimeout(handleQueue,API_REQUEST_INTERVAL);
         setTimeout(main,1000);
     }
