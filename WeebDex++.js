@@ -7,7 +7,7 @@
 // @match        https://weebdex.org/*
 // @match        http://weebdex.org/*
 // @icon         https://weebdex.org/favicon.ico
-// @grant        none
+// @grant        GM_xmlhttpRequest
 // @run-at       document-end
 // ==/UserScript==
 
@@ -54,17 +54,31 @@
     let allTags = [];
 
     function fetchTags() {
-        return fetch('https://api.weebdex.org/manga/tag?limit=100')
-            .then(res => res.json())
-            .then(data => {
-                allTags = data.data.map(tag => tag.name.toLowerCase()).sort();
-                return allTags;
-            })
-            .catch(err => {
-                console.error('Failed to fetch tags', err);
-                allTags = [];
-                return [];
+        return new Promise((resolve, reject) => {
+            GM_xmlhttpRequest({
+                method: 'GET',
+                url: 'https://api.weebdex.org/manga/tag?limit=100',
+                headers: {
+                    'Referer': 'https://weebdex.org/'
+                },
+                onload: function(res) {
+                    try {
+                        const data = JSON.parse(res.responseText);
+                        allTags = data.data.map(tag => tag.name.toLowerCase()).sort();
+                        resolve(allTags);
+                    } catch (err) {
+                        console.error('Failed to parse tags', err);
+                        allTags = [];
+                        resolve([]);
+                    }
+                },
+                onerror: function(err) {
+                    console.error('Failed to fetch tags', err);
+                    allTags = [];
+                    resolve([]);
+                }
             });
+        });
     }
 
     //------------------UTILS----------------//
@@ -288,16 +302,25 @@ function hideAllReadFunc() {
     }
 
     function checkPage(entryID) {
-        const xhr = new XMLHttpRequest();
-        xhr.open('GET', `https://api.weebdex.org/manga/${entryID}`, true);
-        xhr.onload = function() {
-            if (xhr.status>=200 && xhr.status<300) {
-                try { parseAndHandleEntry(entryID, JSON.parse(xhr.responseText)); }
-                catch(e){ console.error('Error parsing response for manga '+entryID,e); }
+        GM_xmlhttpRequest({
+            method: 'GET',
+            url: `https://api.weebdex.org/manga/${entryID}`,
+            headers: {
+                'Referer': 'https://weebdex.org/'
+            },
+            onload: function(res) {
+                if (res.status >= 200 && res.status < 300) {
+                    try {
+                        parseAndHandleEntry(entryID, JSON.parse(res.responseText));
+                    } catch (e) {
+                        console.error('Error parsing response for manga ' + entryID, e);
+                    }
+                }
+            },
+            onerror: function() {
+                console.error('Failed to fetch manga ' + entryID);
             }
-        };
-        xhr.onerror = () => console.error('Failed to fetch manga '+entryID);
-        xhr.send();
+        });
     }
 
     function parseAndHandleEntry(entryID, metadata) {
@@ -576,14 +599,26 @@ function hideAllReadFunc() {
             itemDiv.appendChild(removeBtn);
             listDiv.appendChild(itemDiv);
             // Fetch name
-            fetch(`https://api.weebdex.org/${type}/${item}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.name) {
-                        nameSpan.textContent = `${data.name} (${item})`;
+            GM_xmlhttpRequest({
+                method: 'GET',
+                url: `https://api.weebdex.org/${type}/${item}`,
+                headers: {
+                    'Referer': 'https://weebdex.org/'
+                },
+                onload: function(res) {
+                    try {
+                        const data = JSON.parse(res.responseText);
+                        if (data.name) {
+                            nameSpan.textContent = `${data.name} (${item})`;
+                        }
+                    } catch (e) {
+                        // ignore
                     }
-                })
-                .catch(() => {});
+                },
+                onerror: function() {
+                    // ignore
+                }
+            });
         });
     }
     function importSettings() {
