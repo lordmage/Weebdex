@@ -59,7 +59,7 @@ function getFormat(pathname) {
     if (pathname.startsWith("/author")) return 2;
     if (pathname.startsWith("/tag")) return 2;
     if (pathname === "/updates") return 1; // FORMAT_LIST
-    if (pathname.startsWith("/search")) return 2;
+    if (pathname.startsWith("/search") && url.searchParams.get('sort') === 'createdAt') return FORMAT_LIST;; // treat as list for recent feed
     return 2;
 }
     function extractEntryID(url) {
@@ -319,7 +319,8 @@ function hideAllReadFunc() {
     // simplified addButtonsForListFormat/addButtonsForThumbnailFormat/addButtonsForDetailFormat using addButtonsForElement
     function addButtonsForListFormat(){document.querySelectorAll('article.flex.gap-2.border-t-2.py-2').forEach(entry=>{const link=entry.querySelector('h2.truncate.font-semibold a[href*="/title/"]');if(link && !entry.querySelector('.weebdex-tracker-btns')){const entryID=extractEntryID(link.href);if(entryID) addButtonsForElement(entryID,entry,FORMAT_LIST);}});}
     function addButtonsForThumbnailFormat(){document.querySelectorAll('[class*="manga-card"],.manga-card,.title-card,article[class*="flex"]').forEach(entry=>{const link=entry.querySelector('a[href*="/title/"]');if(link && !entry.querySelector('.weebdex-tracker-btns')){const entryID=extractEntryID(link.href);if(entryID) addButtonsForElement(entryID,entry,FORMAT_THUMBNAIL);}});}
-    function addButtonsForDetailFormat(){const entry=document.querySelector('main,[role="main"]')||document.body;try{const entryID=extractEntryID(window.location.href);if(entryID)addButtonsForElement(entryID,entry,FORMAT_DETAIL);}catch(e){console.error("Error getting entry ID:",e);}}
+    function addButtonsForDetailFormat(){const statsDiv = document.querySelector('.mt-2.5.flex.items-center.gap-2.5.text-base');if (statsDiv) {    statsDiv.insertAdjacentElement('afterend', btnContainer);} else {    element.appendChild(btnContainer);
+    // fallback}}catch(e){console.error("Error getting entry ID:",e);}}
 
     function addButtonsForElement(entryID,element,format){
         if(element.querySelector(".weebdex-tracker-btns")) return;
