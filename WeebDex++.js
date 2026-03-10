@@ -21,6 +21,7 @@
     const IGNORE_BUTTON_COLOR = "#ab13133d";
     const UNMARKED_BUTTON_COLOR = "#4242cd3d";
     const HIDE_ALL_READ_BUTTON_COLOR = "#ff80003d";
+    const TAG_BLOCK_COLOR = "#ff6b6b3d";
     const DOES_HIDE_ALL_READ = true;
 
     let hideRead = false;
@@ -210,7 +211,7 @@ function createControlButton(text,bgColor,onClick){
 
     //------------------STATISTICS----------------//
     function getStatistics() {
-        const stats = { read: 0, ignored: 0, unmarked: 0 };
+        const stats = { read: 0, ignored: 0, unmarked: 0, tagBlocked: 0 };
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
             if (key && key.length > 10 && !key.startsWith("_conf_")) {
@@ -218,6 +219,7 @@ function createControlButton(text,bgColor,onClick){
                 if (value === "1") stats.read++;
                 else if (value === "-1") stats.ignored++;
                 else if (value === "-2") stats.unmarked++;
+                else if (value === "-3") stats.tagBlocked++;
             }
         }
         return stats;
@@ -321,7 +323,7 @@ function hideAllReadFunc() {
         for (let i=0;i<tags.length;i++) {
             const tag = tags[i]?.name?.toLowerCase?.() || "";
             if (TAG_LIST.includes(tag)) {
-                localStorage.setItem(entryID,"-1");
+                localStorage.setItem(entryID,"-3");
                 categorize(getFormat(window.location.href), window.location.href===CATEGORY_UPDATES);
                 return;
             }
@@ -364,6 +366,7 @@ function hideAllReadFunc() {
                 const flag=localStorage.getItem(entryID);
                 if(flag==="1"){readBtn.style.backgroundColor=READ_BUTTON_COLOR; ignoreBtn.style.backgroundColor="transparent"; toggleVisibility(entry,!hideRead);}
                 else if(flag==="-1"){readBtn.style.backgroundColor="transparent"; ignoreBtn.style.backgroundColor=IGNORE_BUTTON_COLOR; toggleVisibility(entry,!hideIgnore);}
+                else if(flag==="-3"){readBtn.style.backgroundColor="transparent"; ignoreBtn.style.backgroundColor=TAG_BLOCK_COLOR; toggleVisibility(entry,!hideIgnore);}
                 else{readBtn.style.backgroundColor="transparent"; ignoreBtn.style.backgroundColor="transparent"; toggleVisibility(entry,!hideUnmarked);
                     if(isLatestPage&&(flag===null||forceRecheckNewEntry)&&!queuedIDs.has(entryID)) {queue.push(entryID); queuedIDs.add(entryID);}}
             }
@@ -497,7 +500,7 @@ function hideAllReadFunc() {
             const stats = getStatistics();
             const statsDiv = document.createElement("div");
             statsDiv.style.cssText = "margin:16px 0;border-top:1px solid #e5e7eb;padding-top:8px;";
-            statsDiv.innerHTML = `<strong>Statistics:</strong><br>Read: ${stats.read} | Ignored: ${stats.ignored} | Unmarked: ${stats.unmarked}`;
+            statsDiv.innerHTML = `<strong>Statistics:</strong><br>Read: ${stats.read} | Ignored: ${stats.ignored} | Tag Blocked: ${stats.tagBlocked} | Unmarked: ${stats.unmarked}`;
             settingsPanel.appendChild(statsDiv);
 
             // Export/Import
