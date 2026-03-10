@@ -8,6 +8,8 @@
 // @match        http://weebdex.org/*
 // @icon         https://weebdex.org/favicon.ico
 // @grant        GM_xmlhttpRequest
+// @grant        GM_setValue
+// @grant        GM_getValue
 // @run-at       document-end
 // ==/UserScript==
 
@@ -55,6 +57,15 @@
     const FORMAT_DETAIL = 3;
 
     let allTags = [];
+
+    // Config storage functions
+    function getConfig(key, defaultValue) {
+        return GM_getValue(key, defaultValue);
+    }
+
+    function setConfig(key, value) {
+        GM_setValue(key, value);
+    }
 
     function fetchTags() {
         return new Promise((resolve, reject) => {
@@ -547,7 +558,7 @@ function hideAllReadFunc() {
             } else {
                 list.push(id);
             }
-            localStorage.setItem(type === 'user' ? "_conf_users" : "_conf_groups", list.toString());
+            setConfig(type === 'user' ? "_conf_users" : "_conf_groups", list.toString());
             const nowBlocked = list.includes(id);
             button.textContent = nowBlocked ? `Unblock ${type}` : `Block ${type}`;
             button.style.background = nowBlocked ? '#ef4444' : '#10b981';
@@ -638,9 +649,9 @@ function hideAllReadFunc() {
                         hideIgnore = settings.hideIgnore !== false;
                         hideUnmarked = settings.hideUnmarked || false;
                         hideAllRead = settings.hideAllRead !== false;
-                        localStorage.setItem("_conf_users", USER_LIST.toString());
-                        localStorage.setItem("_conf_groups", GROUP_LIST.toString());
-                        localStorage.setItem("_conf_tags", TAG_LIST.toString());
+                        setConfig("_conf_users", USER_LIST.toString());
+                        setConfig("_conf_groups", GROUP_LIST.toString());
+                        setConfig("_conf_tags", TAG_LIST.toString());
                         forceRecheckNewEntry = true;
                         categorize(getFormat(window.location.href), window.location.href === CATEGORY_UPDATES);
                         alert('Settings imported successfully!');
@@ -662,9 +673,9 @@ function hideAllReadFunc() {
         } else {
             TAG_LIST.length=0; TAG_LIST.push(...tags.split(",").map(t=>t.trim().toLowerCase()).filter(t=>t));
         }
-        localStorage.setItem("_conf_users",USER_LIST.toString());
-        localStorage.setItem("_conf_groups",GROUP_LIST.toString());
-        localStorage.setItem("_conf_tags",TAG_LIST.toString());
+        setConfig("_conf_users",USER_LIST.toString());
+        setConfig("_conf_groups",GROUP_LIST.toString());
+        setConfig("_conf_tags",TAG_LIST.toString());
         forceRecheckNewEntry=true;
         settingsOpen=false;
         const panel=document.querySelector("#weebdex-settings"); if(panel) panel.remove();
@@ -673,9 +684,9 @@ function hideAllReadFunc() {
 
     //------------------MAIN LOOP----------------//
     function main(){
-        const lastTagList=localStorage.getItem("_conf_tags");
+        const lastTagList=getConfig("_conf_tags", "");
         const currentTagList=TAG_LIST.toString();
-        if(lastTagList!==currentTagList){forceRecheckNewEntry=true; localStorage.setItem("_conf_tags",currentTagList);}
+        if(lastTagList!==currentTagList){forceRecheckNewEntry=true; setConfig("_conf_tags", currentTagList);}
         handleBaseUrl(window.location.href);
         setTimeout(main,POLLING_TIME);
     }
@@ -709,9 +720,9 @@ function hideAllReadFunc() {
         startHideObserver();
         autoMarkReadOnChapter();
         // Load saved lists
-        const savedUsers = localStorage.getItem("_conf_users");
+        const savedUsers = getConfig("_conf_users", "");
         if (savedUsers) USER_LIST.push(...savedUsers.split(",").filter(u=>u));
-        const savedGroups = localStorage.getItem("_conf_groups");
+        const savedGroups = getConfig("_conf_groups", "");
         if (savedGroups) GROUP_LIST.push(...savedGroups.split(",").filter(g=>g));
         setTimeout(handleQueue,API_REQUEST_INTERVAL);
         setTimeout(main,1000);
