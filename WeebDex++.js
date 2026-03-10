@@ -85,6 +85,9 @@
 
     function toggleVisibility(element, on) {
         if (!element || element.hasAttribute("hidden-override")) return;
+        // avoid unnecessary style changes which can cause flicker
+        const currentlyVisible = element.style.display !== "none";
+        if (currentlyVisible === on) return;
         element.style.display = on ? "" : "none";
     }
 function addControllers() {
@@ -246,6 +249,8 @@ function hideAllReadFunc() {
             hideObserverRunning = true;
 
             requestAnimationFrame(() => {
+                // re-run categorize on mutations to immediately apply hide settings
+                categorize(getFormat(window.location.href), window.location.href===CATEGORY_UPDATES);
                 if (hideAllRead) hideAllReadFunc();
                 hideObserverRunning = false;
             });
