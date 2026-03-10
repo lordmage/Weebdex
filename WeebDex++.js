@@ -293,6 +293,7 @@ function hideAllReadFunc() {
 
     //------------------CATEGORIZE----------------//
     function categorize(format,isLatestPage){
+        if(format === FORMAT_DETAIL) return;
         if(format===FORMAT_NOT_FOUND) return;
         let selector='main,[role="main"]';
         if(format===FORMAT_LIST) selector='article.flex.gap-2.border-t-2.py-2';
@@ -515,7 +516,10 @@ function hideAllReadFunc() {
         const format=getFormat(url.href);
         blockUsers(format);
         if(format===FORMAT_NOT_FOUND) return;
-        if(!initialized){addControllers(); initialized=true;}
+        if(!initialized){
+            if(format !== FORMAT_DETAIL) addControllers();
+            initialized=true;
+        }
         addButtons(format);
         categorize(format,url.href===CATEGORY_UPDATES);
     }
