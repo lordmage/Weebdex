@@ -31,9 +31,7 @@
     let queue = [];
     let initialized = false;
     let settingsOpen = false;
-    let darkMode = false;
     let autoMarkRead = true;
-    let keyboardShortcuts = true;
     let hideObserverRunning = false;
 
     const USER_LIST = [];
@@ -116,13 +114,11 @@ function addControllers() {
     const button2 = createControlButton("Toggle Ignore", hideIgnore ? IGNORE_BUTTON_COLOR : "transparent", () => { hideIgnore = !hideIgnore; button2.style.backgroundColor = hideIgnore ? IGNORE_BUTTON_COLOR : "transparent"; categorize(getFormat(window.location.pathname), window.location.pathname === CATEGORY_UPDATES); hideAllReadFunc(); });
     const button3 = createControlButton("Toggle Unmarked", hideUnmarked ? UNMARKED_BUTTON_COLOR : "transparent", () => { hideUnmarked = !hideUnmarked; button3.style.backgroundColor = hideUnmarked ? UNMARKED_BUTTON_COLOR : "transparent"; categorize(getFormat(window.location.pathname), window.location.pathname === CATEGORY_UPDATES); hideAllReadFunc(); });
     const button4 = createControlButton("Hide All Read?", hideAllRead ? HIDE_ALL_READ_BUTTON_COLOR : "transparent", () => { hideAllRead = !hideAllRead; button4.style.backgroundColor = hideAllRead ? HIDE_ALL_READ_BUTTON_COLOR : "transparent"; hideAllReadFunc(); });
-    const darkModeBtn = createControlButton("🌙 Dark Mode", darkMode ? "#4a5568" : "transparent", toggleDarkMode);
 
     controlsContainer.appendChild(button1);
     controlsContainer.appendChild(button2);
     controlsContainer.appendChild(button3);
     if (DOES_HIDE_ALL_READ) controlsContainer.appendChild(button4);
-    controlsContainer.appendChild(darkModeBtn);
 
     ele.appendChild(controlsContainer);
 }
@@ -145,84 +141,8 @@ function createControlButton(text,bgColor,onClick){
             .control-btn:hover {opacity:0.9; transform:translateY(-1px); box-shadow:0 2px 4px rgba(0,0,0,0.1);}
             .weebdex-tracker-btns {animation: fadeIn 0.3s ease;}
             @keyframes fadeIn {from {opacity:0; transform:translateY(-5px);} to {opacity:1; transform:translateY(0);}}
-            .dark-mode {background-color: #1a1a1a !important; color: #e5e5e5 !important;}
-            .dark-mode * {color: inherit;}
-            .dark-mode #weebdex-controls {background: #2d2d2d; border-color: #4a4a4a;}
-            .dark-mode .control-btn {background-color: transparent; border-color: #6b7280; color: #e5e5e5;}
-            .dark-mode .control-btn:hover {background-color: #4a4a4a;}
         `;
         document.head.appendChild(style);
-    }
-    //------------------DARK MODE----------------//
-    function toggleDarkMode() {
-        darkMode = !darkMode;
-        localStorage.setItem('weebdex_dark_mode', darkMode);
-        if (darkMode) {
-            document.body.classList.add('dark-mode');
-        } else {
-            document.body.classList.remove('dark-mode');
-        }
-        // Update button color
-        const darkModeBtn = document.querySelector('#weebdex-controls .control-btn');
-        if (darkModeBtn && darkModeBtn.textContent.includes('Dark Mode')) {
-            darkModeBtn.style.backgroundColor = darkMode ? "#4a5568" : "transparent";
-        }
-    }
-
-    function loadDarkMode() {
-        const saved = localStorage.getItem('weebdex_dark_mode');
-        if (saved === 'true') {
-            darkMode = true;
-            document.body.classList.add('dark-mode');
-        }
-    }
-
-    //------------------KEYBOARD SHORTCUTS----------------//
-    function setupKeyboardShortcuts() {
-        if (!keyboardShortcuts) return;
-        document.addEventListener('keydown', (e) => {
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-            switch (e.key.toLowerCase()) {
-                case 'r':
-                    if (e.ctrlKey || e.metaKey) return; // Allow Ctrl+R for refresh
-                    hideRead = !hideRead;
-                    categorize(getFormat(window.location.pathname), window.location.pathname === CATEGORY_UPDATES);
-                    hideAllReadFunc();
-                    // Update button color
-                    const readBtn = document.querySelector('#weebdex-controls .control-btn');
-                    if (readBtn && readBtn.textContent.includes('Read')) {
-                        readBtn.style.backgroundColor = hideRead ? READ_BUTTON_COLOR : "transparent";
-                    }
-                    break;
-                case 'i':
-                    hideIgnore = !hideIgnore;
-                    categorize(getFormat(window.location.pathname), window.location.pathname === CATEGORY_UPDATES);
-                    hideAllReadFunc();
-                    // Update button color
-                    const ignoreBtn = document.querySelectorAll('#weebdex-controls .control-btn')[1];
-                    if (ignoreBtn && ignoreBtn.textContent.includes('Ignore')) {
-                        ignoreBtn.style.backgroundColor = hideIgnore ? IGNORE_BUTTON_COLOR : "transparent";
-                    }
-                    break;
-                case 'u':
-                    hideUnmarked = !hideUnmarked;
-                    categorize(getFormat(window.location.pathname), window.location.pathname === CATEGORY_UPDATES);
-                    hideAllReadFunc();
-                    // Update button color
-                    const unmarkedBtn = document.querySelectorAll('#weebdex-controls .control-btn')[2];
-                    if (unmarkedBtn && unmarkedBtn.textContent.includes('Unmarked')) {
-                        unmarkedBtn.style.backgroundColor = hideUnmarked ? UNMARKED_BUTTON_COLOR : "transparent";
-                    }
-                    break;
-                case 'd':
-                    toggleDarkMode();
-                    break;
-                case 's':
-                    if (e.ctrlKey || e.metaKey) return; // Allow Ctrl+S
-                    toggleSettings();
-                    break;
-            }
-        });
     }
 
     //------------------AUTO MARK READ----------------//
@@ -472,32 +392,6 @@ function hideAllReadFunc() {
             const tagInput=document.createElement("textarea");tagInput.value=TAG_LIST.join(", ");tagInput.style.cssText="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:12px;resize:vertical;min-height:60px;";tagDiv.appendChild(tagInput);
             settingsPanel.appendChild(tagDiv);
 
-            // Auto-mark read on chapter view
-            const autoMarkDiv = document.createElement("div");
-            const autoMarkLabel = document.createElement("label");
-            autoMarkLabel.textContent = "Auto-mark manga as read when viewing chapters";
-            autoMarkLabel.style.cssText = "display:block;font-size:12px;color:#6b7280;margin-bottom:4px;";
-            const autoMarkCheckbox = document.createElement("input");
-            autoMarkCheckbox.type = "checkbox";
-            autoMarkCheckbox.checked = autoMarkRead;
-            autoMarkCheckbox.style.cssText = "margin-right:8px;";
-            autoMarkDiv.appendChild(autoMarkCheckbox);
-            autoMarkDiv.appendChild(autoMarkLabel);
-            settingsPanel.appendChild(autoMarkDiv);
-
-            // Keyboard shortcuts
-            const shortcutsDiv = document.createElement("div");
-            const shortcutsLabel = document.createElement("label");
-            shortcutsLabel.textContent = "Enable keyboard shortcuts (R/I/U for toggles, D for dark mode, S for settings)";
-            shortcutsLabel.style.cssText = "display:block;font-size:12px;color:#6b7280;margin-bottom:4px;";
-            const shortcutsCheckbox = document.createElement("input");
-            shortcutsCheckbox.type = "checkbox";
-            shortcutsCheckbox.checked = keyboardShortcuts;
-            shortcutsCheckbox.style.cssText = "margin-right:8px;";
-            shortcutsDiv.appendChild(shortcutsCheckbox);
-            shortcutsDiv.appendChild(shortcutsLabel);
-            settingsPanel.appendChild(shortcutsDiv);
-
             // Statistics
             const stats = getStatistics();
             const statsDiv = document.createElement("div");
@@ -523,7 +417,7 @@ function hideAllReadFunc() {
             // Save button
             const saveBtn=document.createElement("button");saveBtn.textContent="💾 Save Configuration";
             saveBtn.style.cssText="width:100%;padding:10px;background-color:#8b5cf6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:14px;margin-top:8px;transition:background-color 0.2s;";
-            saveBtn.addEventListener("click",()=>{saveConfiguration(userInput.value,groupInput.value,tagInput.value,autoMarkCheckbox.checked,shortcutsCheckbox.checked);});
+            saveBtn.addEventListener("click",()=>{saveConfiguration(userInput.value,groupInput.value,tagInput.value);});
             settingsPanel.appendChild(saveBtn);
         }
         settingsOpen=true;
@@ -536,7 +430,6 @@ function hideAllReadFunc() {
             tags: TAG_LIST,
             darkMode,
             autoMarkRead,
-            keyboardShortcuts,
             hideRead,
             hideIgnore,
             hideUnmarked,
@@ -571,19 +464,11 @@ function hideAllReadFunc() {
                         GROUP_LIST.push(...(settings.groups || []));
                         TAG_LIST.length = 0;
                         TAG_LIST.push(...(settings.tags || []));
-                        darkMode = settings.darkMode || false;
-                        autoMarkRead = settings.autoMarkRead !== false;
-                        keyboardShortcuts = settings.keyboardShortcuts !== false;
                         hideRead = settings.hideRead || false;
                         hideIgnore = settings.hideIgnore !== false;
                         hideUnmarked = settings.hideUnmarked || false;
                         hideAllRead = settings.hideAllRead !== false;
                         localStorage.setItem("_conf_tags", TAG_LIST.toString());
-                        localStorage.setItem('weebdex_dark_mode', darkMode);
-                        localStorage.setItem('weebdex_auto_mark', autoMarkRead);
-                        localStorage.setItem('weebdex_keyboard_shortcuts', keyboardShortcuts);
-                        if (darkMode) document.body.classList.add('dark-mode');
-                        else document.body.classList.remove('dark-mode');
                         forceRecheckNewEntry = true;
                         categorize(getFormat(window.location.pathname), window.location.pathname === CATEGORY_UPDATES);
                         alert('Settings imported successfully!');
@@ -597,15 +482,11 @@ function hideAllReadFunc() {
         input.click();
     }
 
-    function saveConfiguration(users,groups,tags,autoMark,shortcuts){
+    function saveConfiguration(users,groups,tags){
         USER_LIST.length=0; USER_LIST.push(...users.split(",").map(u=>u.trim()).filter(u=>u));
         GROUP_LIST.length=0; GROUP_LIST.push(...groups.split(",").map(g=>g.trim()).filter(g=>g));
         TAG_LIST.length=0; TAG_LIST.push(...tags.split(",").map(t=>t.trim().toLowerCase()).filter(t=>t));
         localStorage.setItem("_conf_tags",TAG_LIST.toString());
-        autoMarkRead = autoMark;
-        localStorage.setItem('weebdex_auto_mark', autoMarkRead);
-        keyboardShortcuts = shortcuts;
-        localStorage.setItem('weebdex_keyboard_shortcuts', keyboardShortcuts);
         forceRecheckNewEntry=true;
         settingsOpen=false;
         const panel=document.querySelector("#weebdex-settings"); if(panel) panel.remove();
@@ -631,19 +512,10 @@ function hideAllReadFunc() {
         categorize(format,url.pathname===CATEGORY_UPDATES);
     }
 
-    function loadSettings() {
-        const savedAutoMark = localStorage.getItem('weebdex_auto_mark');
-        if (savedAutoMark !== null) autoMarkRead = savedAutoMark === 'true';
-        const savedShortcuts = localStorage.getItem('weebdex_keyboard_shortcuts');
-        if (savedShortcuts !== null) keyboardShortcuts = savedShortcuts === 'true';
-    }
-
     //------------------INIT----------------//
     function init(){
         addStyles();
         loadDarkMode();
-        loadSettings();
-        setupKeyboardShortcuts();
         startHideObserver();
         autoMarkReadOnChapter();
         setTimeout(handleQueue,API_REQUEST_INTERVAL);
