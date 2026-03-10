@@ -325,7 +325,7 @@ function hideAllReadFunc() {
         if (!metadata) return;
         const tags = metadata.relationships?.tags || [];
         for (let i=0;i<tags.length;i++) {
-            const tag = tags[i].name ? tags[i].name.toLowerCase() : "";
+            const tag = tags[i]?.name?.toLowerCase?.() || "";
             if (TAG_LIST.includes(tag)) {
                 localStorage.setItem(entryID,"-1");
                 categorize(getFormat(window.location.href), window.location.href===CATEGORY_UPDATES);
