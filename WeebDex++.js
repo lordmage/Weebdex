@@ -38,13 +38,13 @@
     const GROUP_LIST = [];
     const TAG_LIST = ["boys' love"];
 
-    const CATEGORY_UPDATES = "/updates";
-    const CATEGORY_SEARCH = "/search";
-    const CATEGORY_TITLE = "/title/";
-    const CATEGORY_AUTHOR = "/author/";
-    const CATEGORY_GROUP = "/group/";
-    const CATEGORY_TAG = "/tag/";
-    const CATEGORY_CHAPTER = "/chapter/";
+    const CATEGORY_UPDATES = "https://weebdex.org/updates";
+    const CATEGORY_SEARCH = "https://weebdex.org/search?sort=createdAt";
+    const CATEGORY_TITLE = "https://weebdex.org/title/";
+    const CATEGORY_AUTHOR = "https://weebdex.org/author/";
+    const CATEGORY_GROUP = "https://weebdex.org/group/";
+    const CATEGORY_TAG = "https://weebdex.org/tag/";
+    const CATEGORY_CHAPTER = "https://weebdex.org/chapter/";
 
     const FORMAT_NOT_FOUND = 0;
     const FORMAT_LIST = 1;
@@ -53,13 +53,13 @@
 
     //------------------UTILS----------------//
     // Must be at the top, before categorize(), handleBaseUrl(), or addButtons calls
-function getFormat(pathname) {
-    if (pathname.startsWith("/title/")) return 3; // FORMAT_DETAIL
-    if (pathname.startsWith("/group")) return 2; // FORMAT_THUMBNAIL
-    if (pathname.startsWith("/author")) return 2;
-    if (pathname.startsWith("/tag")) return 2;
-    if (pathname === "/updates") return 1; // FORMAT_LIST
-    if (pathname.startsWith("/search")) return 2;
+function getFormat(href) {
+    if (href.startsWith("https://weebdex.org/title/")) return 3; // FORMAT_DETAIL
+    if (href.startsWith("https://weebdex.org/group")) return 2; // FORMAT_THUMBNAIL
+    if (href.startsWith("https://weebdex.org/author")) return 2;
+    if (href.startsWith("https://weebdex.org/tag")) return 2;
+    if (href === "https://weebdex.org/updates") return 1; // FORMAT_LIST
+    if (href.startsWith("https://weebdex.org/search")) return 2;
     return 2;
 }
     function extractEntryID(url) {
@@ -110,9 +110,9 @@ function addControllers() {
     const controlsContainer = document.createElement("div");
     controlsContainer.style.cssText = "display:flex;flex-direction:column;gap:6px;";
 
-    const button1 = createControlButton("Toggle Read", hideRead ? READ_BUTTON_COLOR : "transparent", () => { hideRead = !hideRead; button1.style.backgroundColor = hideRead ? READ_BUTTON_COLOR : "transparent"; categorize(getFormat(window.location.pathname), window.location.pathname === CATEGORY_UPDATES); hideAllReadFunc(); });
-    const button2 = createControlButton("Toggle Ignore", hideIgnore ? IGNORE_BUTTON_COLOR : "transparent", () => { hideIgnore = !hideIgnore; button2.style.backgroundColor = hideIgnore ? IGNORE_BUTTON_COLOR : "transparent"; categorize(getFormat(window.location.pathname), window.location.pathname === CATEGORY_UPDATES); hideAllReadFunc(); });
-    const button3 = createControlButton("Toggle Unmarked", hideUnmarked ? UNMARKED_BUTTON_COLOR : "transparent", () => { hideUnmarked = !hideUnmarked; button3.style.backgroundColor = hideUnmarked ? UNMARKED_BUTTON_COLOR : "transparent"; categorize(getFormat(window.location.pathname), window.location.pathname === CATEGORY_UPDATES); hideAllReadFunc(); });
+    const button1 = createControlButton("Toggle Read", hideRead ? READ_BUTTON_COLOR : "transparent", () => { hideRead = !hideRead; button1.style.backgroundColor = hideRead ? READ_BUTTON_COLOR : "transparent"; categorize(getFormat(window.location.href), window.location.href === CATEGORY_UPDATES); hideAllReadFunc(); });
+    const button2 = createControlButton("Toggle Ignore", hideIgnore ? IGNORE_BUTTON_COLOR : "transparent", () => { hideIgnore = !hideIgnore; button2.style.backgroundColor = hideIgnore ? IGNORE_BUTTON_COLOR : "transparent"; categorize(getFormat(window.location.href), window.location.href === CATEGORY_UPDATES); hideAllReadFunc(); });
+    const button3 = createControlButton("Toggle Unmarked", hideUnmarked ? UNMARKED_BUTTON_COLOR : "transparent", () => { hideUnmarked = !hideUnmarked; button3.style.backgroundColor = hideUnmarked ? UNMARKED_BUTTON_COLOR : "transparent"; categorize(getFormat(window.location.href), window.location.href === CATEGORY_UPDATES); hideAllReadFunc(); });
     const button4 = createControlButton("Hide All Read?", hideAllRead ? HIDE_ALL_READ_BUTTON_COLOR : "transparent", () => { hideAllRead = !hideAllRead; button4.style.backgroundColor = hideAllRead ? HIDE_ALL_READ_BUTTON_COLOR : "transparent"; hideAllReadFunc(); });
 
     controlsContainer.appendChild(button1);
@@ -147,7 +147,7 @@ function createControlButton(text,bgColor,onClick){
 
     //------------------AUTO MARK READ----------------//
     function autoMarkReadOnChapter() {
-        if (!autoMarkRead || !window.location.pathname.includes(CATEGORY_CHAPTER)) return;
+        if (!autoMarkRead || !window.location.href.includes(CATEGORY_CHAPTER)) return;
         // Extract manga ID from chapter URL, assuming format /chapter/mangaId-chapterId
         const pathParts = window.location.pathname.split('/');
         if (pathParts.length >= 3) {
@@ -266,7 +266,7 @@ function hideAllReadFunc() {
             const tag = tags[i].name ? tags[i].name.toLowerCase() : "";
             if (TAG_LIST.includes(tag)) {
                 localStorage.setItem(entryID,"-1");
-                categorize(getFormat(window.location.pathname), window.location.pathname===CATEGORY_UPDATES);
+                categorize(getFormat(window.location.href), window.location.href===CATEGORY_UPDATES);
                 return;
             }
         }
@@ -327,6 +327,15 @@ function hideAllReadFunc() {
         if(!container) return;
         const btnContainer=createButtonContainer(entryID,format===FORMAT_DETAIL);
         if(format===FORMAT_LIST){const titleContainer=element.querySelector('h2.truncate.font-semibold');if(titleContainer && titleContainer.parentNode) titleContainer.parentNode.insertBefore(btnContainer,titleContainer.nextSibling);}
+        else if(format===FORMAT_DETAIL){
+            const synopsisDiv = document.querySelector('div > strong.font-semibold');
+            if (synopsisDiv && synopsisDiv.textContent.trim() === 'Synopsis') {
+                const parentDiv = synopsisDiv.parentNode;
+                parentDiv.parentNode.insertBefore(btnContainer, parentDiv);
+            } else {
+                container.appendChild(btnContainer);
+            }
+        }
         else container.appendChild(btnContainer);
     }
 
@@ -355,9 +364,9 @@ function hideAllReadFunc() {
         return btn;
     }
 
-    function queueEntry(event){const entryID=event.currentTarget.getAttribute("entryid");localStorage.setItem(entryID,"1");updateButtonColors(event.currentTarget,READ_BUTTON_COLOR,"transparent");categorize(getFormat(window.location.pathname),window.location.pathname===CATEGORY_UPDATES);}
-    function ignoreEntry(event){const entryID=event.currentTarget.getAttribute("entryid");localStorage.setItem(entryID,"-1");updateButtonColors(event.currentTarget,IGNORE_BUTTON_COLOR,"transparent",true);categorize(getFormat(window.location.pathname),window.location.pathname===CATEGORY_UPDATES);}
-    function clearEntry(event){const entryID=event.currentTarget.getAttribute("entryid");localStorage.removeItem(entryID);const container=event.currentTarget.parentNode;const readBtn=container.querySelector(".weebdex-read");const ignoreBtn=container.querySelector(".weebdex-ignore");if(readBtn) readBtn.style.backgroundColor="transparent";if(ignoreBtn) ignoreBtn.style.backgroundColor="transparent";categorize(getFormat(window.location.pathname),window.location.pathname===CATEGORY_UPDATES);}
+    function queueEntry(event){const entryID=event.currentTarget.getAttribute("entryid");localStorage.setItem(entryID,"1");updateButtonColors(event.currentTarget,READ_BUTTON_COLOR,"transparent");categorize(getFormat(window.location.href),window.location.href===CATEGORY_UPDATES);}
+    function ignoreEntry(event){const entryID=event.currentTarget.getAttribute("entryid");localStorage.setItem(entryID,"-1");updateButtonColors(event.currentTarget,IGNORE_BUTTON_COLOR,"transparent",true);categorize(getFormat(window.location.href),window.location.href===CATEGORY_UPDATES);}
+    function clearEntry(event){const entryID=event.currentTarget.getAttribute("entryid");localStorage.removeItem(entryID);const container=event.currentTarget.parentNode;const readBtn=container.querySelector(".weebdex-read");const ignoreBtn=container.querySelector(".weebdex-ignore");if(readBtn) readBtn.style.backgroundColor="transparent";if(ignoreBtn) ignoreBtn.style.backgroundColor="transparent";categorize(getFormat(window.location.href),window.location.href===CATEGORY_UPDATES);}
     function updateButtonColors(clickedBtn,clickedColor,otherColor,isIgnore=false){const container=clickedBtn.parentNode;const readBtn=container.querySelector(".weebdex-read");const ignoreBtn=container.querySelector(".weebdex-ignore");clickedBtn.style.backgroundColor=clickedColor;if(isIgnore && readBtn) readBtn.style.backgroundColor=otherColor;if(!isIgnore && ignoreBtn) ignoreBtn.style.backgroundColor=otherColor;}
 
     //------------------SETTINGS PANEL----------------//
@@ -470,7 +479,7 @@ function hideAllReadFunc() {
                         hideAllRead = settings.hideAllRead !== false;
                         localStorage.setItem("_conf_tags", TAG_LIST.toString());
                         forceRecheckNewEntry = true;
-                        categorize(getFormat(window.location.pathname), window.location.pathname === CATEGORY_UPDATES);
+                        categorize(getFormat(window.location.href), window.location.href === CATEGORY_UPDATES);
                         alert('Settings imported successfully!');
                     } catch (err) {
                         alert('Error importing settings: ' + err.message);
@@ -490,7 +499,7 @@ function hideAllReadFunc() {
         forceRecheckNewEntry=true;
         settingsOpen=false;
         const panel=document.querySelector("#weebdex-settings"); if(panel) panel.remove();
-        categorize(getFormat(window.location.pathname),window.location.pathname===CATEGORY_UPDATES);
+        categorize(getFormat(window.location.href),window.location.href===CATEGORY_UPDATES);
     }
 
     //------------------MAIN LOOP----------------//
@@ -504,12 +513,12 @@ function hideAllReadFunc() {
 
     function handleBaseUrl(baseUrl){
         const url=new URL(baseUrl);
-        const format=getFormat(url.pathname);
+        const format=getFormat(url.href);
         blockUsers(format);
         if(format===FORMAT_NOT_FOUND) return;
         if(!initialized){addControllers(); initialized=true;}
         addButtons(format);
-        categorize(format,url.pathname===CATEGORY_UPDATES);
+        categorize(format,url.href===CATEGORY_UPDATES);
     }
 
     //------------------INIT----------------//
