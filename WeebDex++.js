@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WeebDex++
 // @namespace    https://weebdex.org/
-// @version      1.3.0
+// @version      1.0.0
 // @description  Enhanced QOL for WeebDex - Advanced tracking, filtering, blocking, dark mode, keyboard shortcuts, and more. Now hides both read chapters and manga articles when all chapters are read.
 // @author       WeebDex++
 // @match        https://weebdex.org/*
