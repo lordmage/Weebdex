@@ -33,6 +33,7 @@
     let settingsOpen = false;
     let autoMarkRead = true;
     let hideObserverRunning = false;
+    let observerTimer = null;
     const queuedIDs = new Set();
 
     const USER_LIST = [];
@@ -269,22 +270,13 @@ function hideAllReadFunc() {
     function startHideObserver(){
 
         const observer = new MutationObserver(() => {
+            if(observerTimer) return;
 
-            if (hideObserverRunning) return;
-
-            hideObserverRunning = true;
-
-            // hide everything immediately until we recalc
-            document.body.classList.add('weebdex-hiding');
-
-            requestAnimationFrame(() => {
-                // re-run categorize on mutations to immediately apply hide settings
-                categorize(getFormat(window.location.href), window.location.href===CATEGORY_UPDATES);
+            observerTimer = setTimeout(()=>{
+                categorize(getFormat(location.href), location.href===CATEGORY_UPDATES);
                 if (hideAllRead) hideAllReadFunc();
-                document.body.classList.remove('weebdex-hiding');
-                hideObserverRunning = false;
-            });
-
+                observerTimer = null;
+            }, 200);
         });
 
         observer.observe(document.body,{
