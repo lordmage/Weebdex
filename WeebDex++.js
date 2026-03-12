@@ -269,25 +269,53 @@
     }
 
     // ==================== SECTION 6: STYLES ====================
-    function addStyles() {
-        const style = document.createElement('style');
-        style.textContent = `
-            .weebdex-btn:hover {opacity:0.8; transform:translateY(-1px);}
-            .weebdex-btn:active {transform:translateY(0);}
-            #weebdex-controls {font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;}
-            .control-btn:hover {opacity:0.9; transform:translateY(-1px); box-shadow:0 2px 4px rgba(0,0,0,0.1);}
-            .weebdex-tracker-btns {animation: fadeIn 0.3s ease;}
-            @keyframes fadeIn {from {opacity:0; transform:translateY(-5px);} to {opacity:1; transform:translateY(0);}}
-            body.weebdex-hiding article.flex.gap-2.border-t-2.py-2,
-            body.weebdex-hiding article .group.list-card.flex.gap-4,
-            body.weebdex-hiding [class*="manga-card"],
-            body.weebdex-hiding .manga-card,
-            body.weebdex-hiding .title-card {
-                display: none !important;
-            }
-        `;
-        document.head.appendChild(style);
-    }
+  function addStyles() {
+    const style = document.createElement('style');
+    style.textContent = `
+        .weebdex-btn:hover {opacity:0.8; transform:translateY(-1px);}
+        .weebdex-btn:active {transform:translateY(0);}
+
+        #weebdex-controls {
+            font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+        }
+
+        .control-btn:hover {
+            opacity:0.9;
+            transform:translateY(-1px);
+            box-shadow:0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .weebdex-tracker-btns{
+            display:flex;
+            flex-wrap:wrap;
+            gap:6px;
+            margin:8px 0;
+        }
+
+        .weebdex-tracker-btns button{
+            white-space:nowrap;
+            min-width:50px;
+        }
+
+        @keyframes fadeIn {
+            from {opacity:0; transform:translateY(-5px);}
+            to {opacity:1; transform:translateY(0);}
+        }
+
+        .weebdex-tracker-btns{
+            animation:fadeIn 0.3s ease;
+        }
+
+        body.weebdex-hiding article.flex.gap-2.border-t-2.py-2,
+        body.weebdex-hiding article .group.list-card.flex.gap-4,
+        body.weebdex-hiding [class*="manga-card"],
+        body.weebdex-hiding .manga-card,
+        body.weebdex-hiding .title-card {
+            display:none !important;
+        }
+    `;
+    document.head.appendChild(style);
+}
 
     // ==================== SECTION 7: AUTO MARK READ ====================
     function autoMarkReadOnChapter() {
@@ -511,52 +539,71 @@
 
     // ==================== SECTION 13: CATEGORIZE ====================
     function categorize(format, isLatestPage) {
-        if (format === FORMAT_DETAIL) return;
-        if (format === FORMAT_NOT_FOUND) return;
+    if (format === FORMAT_DETAIL) return;
+    if (format === FORMAT_NOT_FOUND) return;
 
-        let selector;
-        if (format === FORMAT_LIST) {
-            selector = 'article.flex.gap-2.border-t-2.py-2';
-        } else if (format === FORMAT_THUMBNAIL) {
-            // Select both list and thumbnail views
-            selector = 'article.flex.gap-2.border-t-2.py-2, article .group.list-card.flex.gap-4, [class*="manga-card"], .manga-card, .title-card';
+    let selector;
+
+    if (format === FORMAT_LIST) {
+        selector = 'article.flex.gap-2.border-t-2.py-2';
+    } else if (format === FORMAT_THUMBNAIL) {
+        selector = 'article.flex.gap-2.border-t-2.py-2, article .group.list-card.flex.gap-4, [class*="manga-card"], .manga-card, .title-card';
+    } else {
+        selector = 'main,[role="main"]';
+    }
+
+    const entries = document.querySelectorAll(selector);
+
+    entries.forEach(entry => {
+
+        const readBtn = entry.querySelector(".weebdex-read");
+        const ignoreBtn = entry.querySelector(".weebdex-ignore");
+
+        if (!readBtn || !ignoreBtn) return;
+
+        const entryID = readBtn.getAttribute("entryid");
+        const flag = localStorage.getItem(entryID);
+
+        if (flag === "1") {
+
+            readBtn.style.backgroundColor = READ_BUTTON_COLOR;
+            ignoreBtn.style.backgroundColor = "transparent";
+            toggleVisibility(entry, !hideRead);
+
+        } else if (flag === "-1") {
+
+            readBtn.style.backgroundColor = "transparent";
+            ignoreBtn.style.backgroundColor = IGNORE_BUTTON_COLOR;
+            toggleVisibility(entry, !hideIgnore);
+
+        } else if (flag === "-3") {
+
+            readBtn.style.backgroundColor = "transparent";
+            ignoreBtn.style.backgroundColor = TAG_BLOCK_COLOR;
+            toggleVisibility(entry, !hideIgnore);
+
         } else {
-            selector = 'main,[role="main"]';
+
+            readBtn.style.backgroundColor = "transparent";
+            ignoreBtn.style.backgroundColor = "transparent";
+            toggleVisibility(entry, !hideUnmarked);
+
+            if (
+                entryID &&
+                isLatestPage &&
+                (flag === null || forceRecheckNewEntry) &&
+                !queuedIDs.has(entryID)
+            ) {
+
+                queue.push(entryID);
+                queuedIDs.add(entryID);
+
+            }
+
         }
 
-        const entries = document.querySelectorAll(selector);
-        entries.forEach(entry => {
-            const readBtn = entry.querySelector(".weebdex-read");
-            const ignoreBtn = entry.querySelector(".weebdex-ignore");
-            if (readBtn && ignoreBtn) {
-                const entryID = readBtn.getAttribute("entryid");
-                const flag = localStorage.getItem(entryID);
-
-                if (flag === "1") {
-                    readBtn.style.backgroundColor = READ_BUTTON_COLOR;
-                    ignoreBtn.style.backgroundColor = "transparent";
-                    toggleVisibility(entry, !hideRead);
-                } else if (flag === "-1") {
-                    readBtn.style.backgroundColor = "transparent";
-                    ignoreBtn.style.backgroundColor = IGNORE_BUTTON_COLOR;
-                    toggleVisibility(entry, !hideIgnore);
-                } else if (flag === "-3") {
-                    readBtn.style.backgroundColor = "transparent";
-                    ignoreBtn.style.backgroundColor = TAG_BLOCK_COLOR;
-                    toggleVisibility(entry, !hideIgnore);
-                } else {
-                    readBtn.style.backgroundColor = "transparent";
-                    ignoreBtn.style.backgroundColor = "transparent";
-                    toggleVisibility(entry, !hideUnmarked);
-
-                    if (isLatestPage && (flag === null || forceRecheckNewEntry) && !queuedIDs.has(entryID)) {
-                        queue.push(entryID);
-                        queuedIDs.add(entryID);
-                    }
-                }
-            }
-        });
-    }
+    });
+}
 
     // ==================== SECTION 14: TRACKER BUTTONS ====================
     function addButtons(format) {
@@ -1097,24 +1144,24 @@
 
     // ==================== SECTION 18: INITIALIZATION ====================
     function init() {
-        addStyles();
-        startHideObserver();
-        autoMarkReadOnChapter();
+    addStyles();
+    startHideObserver();
+    autoMarkReadOnChapter();
 
-        // Load saved lists
-        const savedUsers = getConfig("_conf_users", "");
-        if (savedUsers) USER_LIST.push(...savedUsers.split(",").filter(u => u));
+    // Load saved lists
+    const savedUsers = getConfig("_conf_users", "");
+    if (savedUsers) USER_LIST.push(...savedUsers.split(",").filter(u => u));
 
-        const savedGroups = getConfig("_conf_groups", "");
-        if (savedGroups) GROUP_LIST.push(...savedGroups.split(",").filter(g => g));
+    const savedGroups = getConfig("_conf_groups", "");
+    if (savedGroups) GROUP_LIST.push(...savedGroups.split(",").filter(g => g));
 
-        setTimeout(handleQueue, API_REQUEST_INTERVAL);
-        setTimeout(main, 1000);
-    }
+    setTimeout(handleQueue, API_REQUEST_INTERVAL);
+    setTimeout(main, 1000);
+}
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}
 })();
