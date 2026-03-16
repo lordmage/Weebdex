@@ -11,9 +11,9 @@
 // @copyright    Lordmage 2026
 // @namespace    https://github.com/lordmage/MangaDex-Combined
 // @author       @ Theo1996, MangaDexPP, patched by Workik
-// @homepageURL  https://github.com/lordmage/Weebdex-
-// @updateURL    https://github.com/lordmage/Weebdex-/raw/refs/heads/main/WeebDex++.js
-// @downloadURL  https://github.com/lordmage/Weebdex-/raw/refs/heads/main/WeebDex++.js
+// @homepageURL  https://github.com/lordmage/Weebdex
+// @updateURL    https://github.com/lordmage/Weebdex/raw/refs/heads/main/WeebDex++.js
+// @downloadURL  https://github.com/lordmage/Weebdex/raw/refs/heads/main/WeebDex++.js
 // @icon         https://icons.duckduckgo.com/ip2/www.weebdex.org.ico
 // @grant        none
 // ==/UserScript==
