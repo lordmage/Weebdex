@@ -10,7 +10,7 @@
 // @run-at       document-end
 // @copyright    Lordmage 2026
 // @namespace    https://github.com/lordmage/MangaDex-Combined
-// @author       @ Theo1996, MangaDexPP, patched by Workik
+// @author       @ lordmage
 // @homepageURL  https://github.com/lordmage/Weebdex
 // @updateURL    https://github.com/lordmage/Weebdex/raw/refs/heads/main/WeebDex++.js
 // @downloadURL  https://github.com/lordmage/Weebdex/raw/refs/heads/main/WeebDex++.js
