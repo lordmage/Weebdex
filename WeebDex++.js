@@ -18,6 +18,7 @@
 // @grant        none
 // ==/UserScript==
 
+
 (function() {
     'use strict';
 
@@ -48,6 +49,7 @@
             this.lastUrl = null;
             this.removedElements = new Map();
             this.hiddenElements = new Map();
+            this.headerIntegrationAttempted = false;
         }
     }
 
@@ -195,41 +197,39 @@
             this.state = state;
         }
 
-        createControlButton(text, bgColor, onClick) {
-    const btn = DOMUtils.createElement('button', {
-        className: 'weebdex-control-btn',
-        textContent: text,
-        onclick: onClick
-    }, {
-        backgroundColor: 'transparent', // Changed from bgColor to white
-        padding: '4px 8px',
-        border: '1px solid rgba(209, 213, 219, 0.5)',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        fontSize: '12px',
-        whiteSpace: 'nowrap',
-        transition: 'all 0.2s',
-        color: 'white',
-        fontWeight: '500'
-    });
+        createControlButton(text, onClick) {
+            const btn = DOMUtils.createElement('button', {
+                className: 'weebdex-control-btn',
+                textContent: text,
+                onclick: onClick
+            }, {
+                backgroundColor: 'white',
+                padding: '4px 8px',
+                border: '1px solid rgba(209, 213, 219, 0.5)',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '12px',
+                whiteSpace: 'nowrap',
+                transition: 'all 0.2s',
+                color: '#374151',
+                fontWeight: '500'
+            });
 
-    btn.addEventListener('mouseenter', () => {
-        btn.style.opacity = '0.9';
-        btn.style.transform = 'translateY(-1px)';
-        btn.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-        btn.style.backgroundColor = 'transparent';
+            btn.addEventListener('mouseenter', () => {
+                btn.style.opacity = '0.9';
+                btn.style.transform = 'translateY(-1px)';
+                btn.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                btn.style.backgroundColor = 'rgba(243, 244, 246, 0.5)';
+            });
 
-    });
+            btn.addEventListener('mouseleave', () => {
+                btn.style.opacity = '1';
+                btn.style.transform = 'translateY(0)';
+                btn.style.boxShadow = 'none';
+                btn.style.backgroundColor = 'white';
+            });
 
-    btn.addEventListener('mouseleave', () => {
-        btn.style.opacity = '1';
-        btn.style.transform = 'translateY(0)';
-        btn.style.boxShadow = 'none';
-        btn.style.backgroundColor = 'transparent'; // Back to white
-    });
-
-    return btn;
-
+            return btn;
         }
 
         createTrackerButton(text, entryID, className) {
@@ -315,16 +315,20 @@
             this.state = new StateManager();
             this.ui = new UIComponents(this.state);
             this.observer = null;
+            this.headerObserver = null;
         }
 
         async init() {
             this.addStyles();
             this.startObserver();
-            this.addControlBar();
-
+            this.startHeaderObserver();
+            
+            // Try initial header integration
+            setTimeout(() => this.tryHeaderIntegration(), 1000);
+            
             setTimeout(() => this.mainLoop(), 1000);
 
-            console.log('WeebDex++ v2.7 initialized');
+            console.log('WeebDex++ v2.8 initialized');
         }
 
         addStyles() {
@@ -394,6 +398,19 @@
             });
         }
 
+        startHeaderObserver() {
+            this.headerObserver = new MutationObserver(() => {
+                if (!this.state.headerIntegrationAttempted) {
+                    this.tryHeaderIntegration();
+                }
+            });
+
+            this.headerObserver.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        }
+
         processNewNode(node) {
             const entries = node.querySelectorAll?.('article.flex.gap-2.border-t-2.py-2, article .group.list-card.flex.gap-4, [class*="manga-card"], .manga-card, .title-card') || [];
 
@@ -417,7 +434,7 @@
 
         categorizeNode(container) {
             const entries = container.querySelectorAll?.('article.flex.gap-2.border-t-2.py-2, article .group.list-card.flex.gap-4, [class*="manga-card"], .manga-card, .title-card') || [];
-
+            
             entries.forEach(entry => {
                 const readBtn = entry.querySelector('.weebdex-read');
                 const ignoreBtn = entry.querySelector('.weebdex-ignore');
@@ -458,46 +475,59 @@
             setTimeout(() => this.mainLoop(), 300);
         }
 
-        // ==================== CONTROL BAR ====================
-        addControlBar() {
-            // Try to integrate into header first
-            if (this.tryHeaderIntegration()) {
-                console.log('Control bar integrated into header');
-                return;
-            }
-
-            // Fallback to floating control bar
-            console.log('Falling back to floating control bar');
-            this.addFloatingControlBar();
-        }
-
+        // ==================== HEADER INTEGRATION ====================
         tryHeaderIntegration() {
+            if (this.state.headerIntegrationAttempted) return false;
+            
             try {
-                // Find the WeebDex logo
-                const weebdexLogo = document.querySelector('a.text-xl.font-semibold[href="/"]');
-                if (!weebdexLogo) {
-                    console.log('WeebDex logo not found');
+                // Look for header elements - SvelteKit apps often have different structures
+                const headerSelectors = [
+                    'header',
+                    'nav',
+                    '[role="navigation"]',
+                    '.header',
+                    '.navigation',
+                    'div[class*="header"]',
+                    'div[class*="nav"]'
+                ];
+
+                let header = null;
+                for (const selector of headerSelectors) {
+                    header = document.querySelector(selector);
+                    if (header) break;
+                }
+
+                if (!header) {
+                    console.log('No header found');
                     return false;
                 }
 
-                // Find the navigation container
-                const navContainer = weebdexLogo.closest('nav');
-                if (!navContainer) {
-                    console.log('Navigation container not found');
-                    return false;
+                // Look for WeebDex logo - try multiple selectors
+                const logoSelectors = [
+                    'a[href="/"]',
+                    'a[href="/"] span',
+                    'a[href="/"] .logo',
+                    '[class*="logo"] a',
+                    'a.text-xl',
+                    'a.font-semibold'
+                ];
+
+                let logo = null;
+                for (const selector of logoSelectors) {
+                    logo = header.querySelector(selector);
+                    if (logo) break;
                 }
 
-                // Find the flex-auto container (where search/other buttons are)
-                const flexAutoContainer = navContainer.querySelector('.flex.flex-auto.shrink-0.items-center.justify-end.gap-1');
-                if (!flexAutoContainer) {
-                    console.log('Flex auto container not found');
+                if (!logo) {
+                    console.log('WeebDex logo not found in header');
                     return false;
                 }
 
                 // Check if controls already exist
-                let controls = navContainer.querySelector('.weebdex-header-controls');
+                let controls = header.querySelector('.weebdex-header-controls');
                 if (controls) {
                     this.updateControlButtons(controls);
+                    this.state.headerIntegrationAttempted = true;
                     return true;
                 }
 
@@ -509,12 +539,9 @@
                 // Create control buttons
                 const button1 = this.ui.createControlButton(
                     this.state.hideRead ? 'Read Hidden' : 'Read Shown',
-                    //'white',
-                    this.state.hideRead ? CONFIG.BUTTON_COLORS.READ : 'transparent',
                     () => {
                         DOMUtils.hideEntries();
                         this.state.hideRead = !this.state.hideRead;
-                        button1.style.backgroundColor = this.state.hideRead ? CONFIG.BUTTON_COLORS.READ : 'transparent';
                         button1.textContent = this.state.hideRead ? 'Read Hidden' : 'Read Shown';
 
                         if (!this.state.hideRead) {
@@ -528,12 +555,10 @@
                 );
 
                 const button2 = this.ui.createControlButton(
-                    this.state.hideIgnore ? 'Ignore Hidden' : 'Ignore Shown',// 'white',
-                  this.state.hideIgnore ? CONFIG.BUTTON_COLORS.IGNORE : 'transparent',
+                    this.state.hideIgnore ? 'Ignore Hidden' : 'Ignore Shown',
                     () => {
                         DOMUtils.hideEntries();
                         this.state.hideIgnore = !this.state.hideIgnore;
-                        button2.style.backgroundColor = this.state.hideIgnore ? CONFIG.BUTTON_COLORS.IGNORE : 'transparent';
                         button2.textContent = this.state.hideIgnore ? 'Ignore Hidden' : 'Ignore Shown';
 
                         if (!this.state.hideIgnore) {
@@ -547,12 +572,10 @@
                 );
 
                 const button3 = this.ui.createControlButton(
-                    this.state.hideUnmarked ? 'Unmarked Hidden' : 'Unmarked Shown',//'white',
-                    this.state.hideUnmarked ? CONFIG.BUTTON_COLORS.UNMARKED : 'transparent',
+                    this.state.hideUnmarked ? 'Unmarked Hidden' : 'Unmarked Shown',
                     () => {
                         DOMUtils.hideEntries();
                         this.state.hideUnmarked = !this.state.hideUnmarked;
-                        button3.style.backgroundColor = this.state.hideUnmarked ? CONFIG.BUTTON_COLORS.UNMARKED : 'transparent';
                         button3.textContent = this.state.hideUnmarked ? 'Unmarked Hidden' : 'Unmarked Shown';
 
                         if (!this.state.hideUnmarked) {
@@ -571,12 +594,10 @@
 
                 if (CONFIG.FEATURES.HIDE_ALL_READ) {
                     const button4 = this.ui.createControlButton(
-                        this.state.hideAllRead ? 'All Read Hidden' : 'All Read Shown',//'white',
-                        this.state.hideAllRead ? CONFIG.BUTTON_COLORS.HIDE_ALL_READ : 'transparent',
+                        this.state.hideAllRead ? 'All Read Hidden' : 'All Read Shown',
                         () => {
                             DOMUtils.hideEntries();
                             this.state.hideAllRead = !this.state.hideAllRead;
-                            button4.style.backgroundColor = this.state.hideAllRead ? CONFIG.BUTTON_COLORS.HIDE_ALL_READ : 'transparent';
                             button4.textContent = this.state.hideAllRead ? 'All Read Hidden' : 'All Read Shown';
                             this.hideAllReadFunc();
                             DOMUtils.showEntries();
@@ -589,15 +610,18 @@
                 const settingsCog = this.createSettingsCog();
                 controls.appendChild(settingsCog);
 
-                // Insert controls into header - after logo, before flex-auto container
-                const logoParentDiv = weebdexLogo.closest('div.flex.shrink-0.items-center.gap-3');
-                if (logoParentDiv && logoParentDiv.parentNode === navContainer) {
-                    navContainer.insertBefore(controls, flexAutoContainer);
+                // Insert controls after the logo
+                const logoParent = logo.parentElement;
+                if (logoParent) {
+                    logoParent.insertBefore(controls, logo.nextSibling);
                 } else {
-                    weebdexLogo.parentNode.insertBefore(controls, flexAutoContainer);
+                    header.insertBefore(controls, logo.nextSibling);
                 }
 
+                this.state.headerIntegrationAttempted = true;
+                console.log('Control bar integrated into header');
                 return true;
+
             } catch (error) {
                 console.error('Header integration failed:', error);
                 return false;
@@ -607,22 +631,33 @@
         updateControlButtons(container) {
             const buttons = container.querySelectorAll('.weebdex-control-btn');
             const buttonConfigs = [
-                { filter: 'hideRead', color: CONFIG.BUTTON_COLORS.READ, text: (v) => v ? "Read Hidden" : "Read Shown" },
-                { filter: 'hideIgnore', color: CONFIG.BUTTON_COLORS.IGNORE, text: (v) => v ? "Ignore Hidden" : "Ignore Shown" },
-                { filter: 'hideUnmarked', color: CONFIG.BUTTON_COLORS.UNMARKED, text: (v) => v ? "Unmarked Hidden" : "Unmarked Shown" }
+                { filter: 'hideRead', text: (v) => v ? "Read Hidden" : "Read Shown" },
+                { filter: 'hideIgnore', text: (v) => v ? "Ignore Hidden" : "Ignore Shown" },
+                { filter: 'hideUnmarked', text: (v) => v ? "Unmarked Hidden" : "Unmarked Shown" }
             ];
-
+            
             if (CONFIG.FEATURES.HIDE_ALL_READ) {
-                buttonConfigs.push({ filter: 'hideAllRead', color: CONFIG.BUTTON_COLORS.HIDE_ALL_READ, text: (v) => v ? "All Read Hidden" : "All Read Shown" });
+                buttonConfigs.push({ filter: 'hideAllRead', text: (v) => v ? "All Read Hidden" : "All Read Shown" });
             }
-
+            
             buttonConfigs.forEach((config, index) => {
                 if (buttons[index]) {
                     const value = this.state[config.filter];
-                    buttons[index].style.backgroundColor = value ? config.color : "transparent";
                     buttons[index].textContent = config.text(value);
                 }
             });
+        }
+
+        // ==================== CONTROL BAR ====================
+        addControlBar() {
+            // Try header integration first
+            if (this.tryHeaderIntegration()) {
+                return;
+            }
+            
+            // Fallback to floating control bar
+            console.log('Falling back to floating control bar');
+            this.addFloatingControlBar();
         }
 
         addFloatingControlBar() {
@@ -653,11 +688,9 @@
             // Create filter buttons
             const button1 = this.ui.createControlButton(
                 this.state.hideRead ? 'Read Hidden' : 'Read Shown',
-                this.state.hideRead ? CONFIG.BUTTON_COLORS.READ : 'transparent',
                 () => {
                     DOMUtils.hideEntries();
                     this.state.hideRead = !this.state.hideRead;
-                    button1.style.backgroundColor = this.state.hideRead ? CONFIG.BUTTON_COLORS.READ : 'transparent';
                     button1.textContent = this.state.hideRead ? 'Read Hidden' : 'Read Shown';
 
                     if (!this.state.hideRead) {
@@ -672,11 +705,9 @@
 
             const button2 = this.ui.createControlButton(
                 this.state.hideIgnore ? 'Ignore Hidden' : 'Ignore Shown',
-                this.state.hideIgnore ? CONFIG.BUTTON_COLORS.IGNORE : 'transparent',
                 () => {
                     DOMUtils.hideEntries();
                     this.state.hideIgnore = !this.state.hideIgnore;
-                    button2.style.backgroundColor = this.state.hideIgnore ? CONFIG.BUTTON_COLORS.IGNORE : 'transparent';
                     button2.textContent = this.state.hideIgnore ? 'Ignore Hidden' : 'Ignore Shown';
 
                     if (!this.state.hideIgnore) {
@@ -691,11 +722,9 @@
 
             const button3 = this.ui.createControlButton(
                 this.state.hideUnmarked ? 'Unmarked Hidden' : 'Unmarked Shown',
-                this.state.hideUnmarked ? CONFIG.BUTTON_COLORS.UNMARKED : 'transparent',
                 () => {
                     DOMUtils.hideEntries();
                     this.state.hideUnmarked = !this.state.hideUnmarked;
-                    button3.style.backgroundColor = this.state.hideUnmarked ? CONFIG.BUTTON_COLORS.UNMARKED : 'transparent';
                     button3.textContent = this.state.hideUnmarked ? 'Unmarked Hidden' : 'Unmarked Shown';
 
                     if (!this.state.hideUnmarked) {
@@ -715,11 +744,9 @@
             if (CONFIG.FEATURES.HIDE_ALL_READ) {
                 const button4 = this.ui.createControlButton(
                     this.state.hideAllRead ? 'All Read Hidden' : 'All Read Shown',
-                    this.state.hideAllRead ? CONFIG.BUTTON_COLORS.HIDE_ALL_READ : 'transparent',
                     () => {
                         DOMUtils.hideEntries();
                         this.state.hideAllRead = !this.state.hideAllRead;
-                        button4.style.backgroundColor = this.state.hideAllRead ? CONFIG.BUTTON_COLORS.HIDE_ALL_READ : 'transparent';
                         button4.textContent = this.state.hideAllRead ? 'All Read Hidden' : 'All Read Shown';
                         this.hideAllReadFunc();
                         DOMUtils.showEntries();
@@ -894,7 +921,7 @@
         exportData() {
             try {
                 const data = {};
-
+                
                 // Export all localStorage items
                 for (let i = 0; i < localStorage.length; i++) {
                     const key = localStorage.key(i);
@@ -925,7 +952,7 @@
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = '.json';
-
+            
             input.onchange = (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
@@ -989,9 +1016,9 @@
         addButtonsForElement(entryID, element, isDetail = false) {
             if (element.querySelector('.weebdex-tracker-btns')) return;
 
-            let container = element.querySelector('div.w-0.flex-auto.space-y-1') ||
-                           element.querySelector('.flex.w-0.flex-auto.flex-col') ||
-                           element.querySelector('.manga-info, .card-content') ||
+            let container = element.querySelector('div.w-0.flex-auto.space-y-1') || 
+                           element.querySelector('.flex.w-0.flex-auto.flex-col') || 
+                           element.querySelector('.manga-info, .card-content') || 
                            element;
 
             if (!container) return;
@@ -999,18 +1026,20 @@
             const btnContainer = this.ui.createButtonContainer(entryID, isDetail);
 
             // Try to insert after title
-            const titleElement = element.querySelector('h2.truncate.font-semibold') ||
+            const titleElement = element.querySelector('h2.truncate.font-semibold') || 
                                element.querySelector('h3') ||
                                element.querySelector('h1');
-
+            
             if (titleElement && titleElement.parentNode) {
                 titleElement.parentNode.insertBefore(btnContainer, titleElement.nextSibling);
             } else {
                 container.appendChild(btnContainer);
             }
-        }        categorize() {
-            const entries = document.querySelectorAll('article.flex.gap-2.border-t-2.py-2, article .group.list-card.flex.gap-4, [class*="manga-card"], .manga-card, .title-card');
+        }
 
+        categorize() {
+            const entries = document.querySelectorAll('article.flex.gap-2.border-t-2.py-2, article .group.list-card.flex.gap-4, [class*="manga-card"], .manga-card, .title-card');
+            
             entries.forEach(entry => {
                 const readBtn = entry.querySelector('.weebdex-read');
                 const ignoreBtn = entry.querySelector('.weebdex-ignore');
@@ -1036,9 +1065,9 @@
             });
         }
 
-        hideAllReadFunc() {
+                hideAllReadFunc() {
             if (!CONFIG.FEATURES.HIDE_ALL_READ) return;
-
+            
             const mangaArticles = document.querySelectorAll('article.flex.gap-2.border-t-2.py-2');
 
             mangaArticles.forEach(mangaArticle => {
@@ -1098,11 +1127,41 @@
     // ==================== INITIALIZATION ====================
     window.weebdexApp = new WeebDexApp();
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
+    // Wait for SvelteKit to load content
+    const waitForSvelteKit = () => {
+        // Check if SvelteKit has loaded content
+        const hasContent = document.querySelector('nav, header, [role="navigation"]') || 
+                          document.querySelector('main, [role="main"]') ||
+                          document.querySelector('article, .manga-card, .title-card');
+        
+        if (hasContent) {
             window.weebdexApp.init();
-        });
+        } else {
+            // Use MutationObserver to wait for content
+            const observer = new MutationObserver((mutations, obs) => {
+                const content = document.querySelector('nav, header, [role="navigation"], main, [role="main"], article, .manga-card, .title-card');
+                if (content) {
+                    obs.disconnect();
+                    setTimeout(() => window.weebdexApp.init(), 500);
+                }
+            });
+            
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+            
+            // Fallback timeout
+            setTimeout(() => {
+                observer.disconnect();
+                window.weebdexApp.init();
+            }, 5000);
+        }
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', waitForSvelteKit);
     } else {
-        window.weebdexApp.init();
+        waitForSvelteKit();
     }
 })();
