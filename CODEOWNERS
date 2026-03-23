@@ -1,18 +1,49 @@
 # CODEOWNERS
 
-# Default: you own everything in the repo
-*       @lordmage
+# --------------------------------------------------
+# Default: you own everything
+# --------------------------------------------------
+* @lordmage
 
-# Example overrides (add as needed)
 
-# Frontend folder owned by another user
-# /frontend/   @frontend-dev
+# --------------------------------------------------
+# 🔴 Critical: Core userscript (highest risk surface)
+# --------------------------------------------------
+# Main script — all functionality lives here
+/WeebDex++.js @lordmage
 
-# Backend code owned by a team
-# /backend/    @your-org/backend-team
 
-# Specific file ownership
-# package.json @devops-user
+# --------------------------------------------------
+# 🟠 Project configuration (protect strongly)
+# --------------------------------------------------
+package.json        @lordmage
+package-lock.json   @lordmage
 
-# Docs shared ownership
-# /docs/       @your-github-username @tech-writer
+
+# --------------------------------------------------
+# 🟡 Documentation (safe to delegate later)
+# --------------------------------------------------
+README.md @lordmage
+
+
+# --------------------------------------------------
+# ⚪ Dependencies (no ownership needed)
+# --------------------------------------------------
+# node_modules should never be edited manually
+/node_modules/ 
+
+
+# --------------------------------------------------
+# 🧩 Future-proofing (commented templates)
+# --------------------------------------------------
+
+# If you later split logic:
+# /src/           @lordmage
+# /ui/            @ui-dev
+# /styles/        @ui-dev
+
+# If you add testing:
+# /tests/         @qa-user
+
+# If you add automation:
+# /.github/       @lordmage
