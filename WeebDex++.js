@@ -3,13 +3,10 @@
 // @namespace    Weebdex++
 // @version      1.0.0
 // @description  Manga tracker / filter system for WeebDex
-// @namespace    https://weebdex.org/
 // @match        https://weebdex.org/*
 // @match        http://weebdex.org/*
-// @icon         https://weebdex.org/favicon.ico
 // @run-at       document-end
 // @copyright    Lordmage 2026
-// @namespace    https://github.com/lordmage/MangaDex-Combined
 // @author       @ lordmage
 // @homepageURL  https://github.com/lordmage/Weebdex
 // @updateURL    https://github.com/lordmage/Weebdex/raw/refs/heads/main/WeebDex++.js
