@@ -1,0 +1,18 @@
+# CODEOWNERS
+
+# Default: you own everything in the repo
+*       @lordmage
+
+# Example overrides (add as needed)
+
+# Frontend folder owned by another user
+# /frontend/   @frontend-dev
+
+# Backend code owned by a team
+# /backend/    @your-org/backend-team
+
+# Specific file ownership
+# package.json @devops-user
+
+# Docs shared ownership
+# /docs/       @your-github-username @tech-writer
