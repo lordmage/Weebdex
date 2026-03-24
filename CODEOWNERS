@@ -1,9 +1,10 @@
 # CODEOWNERS
 
-# --------------------------------------------------
-# Default: you own everything
-# --------------------------------------------------
-* @lordmage
+# These owners will be the default owners for everything in
+# the repo. Unless a later match takes precedence,
+# @lordmage and will be requested for
+# review when someone opens a pull request.
+*       @lordmage
 
 
 # --------------------------------------------------
