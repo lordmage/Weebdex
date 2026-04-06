@@ -14,3 +14,4 @@ Enhanced QOL for WeebDex - filtering
 - **Filtering**: Hide read, ignored, or unmarked manga entries.
 - **Settings Panel**: export/import .json with filtered manga 
 
+***Featue frozen due to shut down of main website
